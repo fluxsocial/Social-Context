@@ -16,7 +16,7 @@ impl SocialContextDao for SocialContextDNA {
     }
     /// Register that there is some dna at dna_address that you are communicating in.
     /// Others in collective can use this to join you in new DNA's
-    fn register_comment_link_dna(dna_address: Address) -> ZomeApiResult<()> {
+    fn register_communication_method(dna_address: Address) -> ZomeApiResult<()> {
         Ok(())
     }
     /// Is current agent allowed to write to this DNA
@@ -24,7 +24,7 @@ impl SocialContextDao for SocialContextDNA {
         true
     }
     /// Get GlobalEntryRef for collective; queryable by dna or agent or all. DHT hotspotting @Nico?
-    fn read_links(
+    fn read_communication(
         by_dna: Option<Address>,
         by_agent: Option<Identity>,
         count: usize,
@@ -33,7 +33,7 @@ impl SocialContextDao for SocialContextDNA {
         Ok(())
     }
     /// Get DNA's this social context is communicating in
-    fn get_comment_link_dnas(count: usize, page: usize) -> ZomeApiResult<GlobalEntryRef> {
+    fn get_communication_methods(count: usize, page: usize) -> ZomeApiResult<GlobalEntryRef> {
         Ok(())
     }
     /// Get agents who are a part of this social context

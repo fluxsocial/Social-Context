@@ -14,6 +14,9 @@ holochain_json_derive = "0.0"
 hdk_proc_macros = "=0.0.47-alpha1"
 meta-traits = { git = "https://github.com/juntofoundation/Holochain-Trait-Definitions", branch = "master" }
 
+[patch."https://github.com/juntofoundation/Holochain-Trait-Definitions"]
+meta-traits = { path = "../../../../../Holochain-Trait-Definitions" }
+
 [lib]
 path = "src/lib.rs"
 crate-type = ["cdylib"]

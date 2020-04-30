@@ -762,11 +762,10 @@ checksum = "71d96e3f3c0b6325d8ccd83c33b28acb183edcb6c67938ba104ec546854b0882"
 [[package]]
 name = "meta-traits"
 version = "0.1.0"
-source = "git+https://github.com/juntofoundation/Holochain-Trait-Definitions#f6b6950c6200f7d7496f1d7b75da6bf65499c34f"
 dependencies = [
  "hdk",
  "hdk_proc_macros",
- "holochain_json_derive 0.0.30",
+ "holochain_json_derive 0.0.23",
  "holochain_wasm_utils",
  "serde",
  "serde_derive",
