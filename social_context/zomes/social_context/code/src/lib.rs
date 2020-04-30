@@ -5,11 +5,14 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
+#[macro_use]
+extern crate holochain_json_derive;
 
 pub mod methods;
 
-use hdk::holochain_core_types::{dna::entry_types::Sharing, signature::Provenance};
-use hdk::prelude::{Address, GetEntryOptions, GetEntryResultType};
+use hdk::holochain_core_types::dna::entry_types::Sharing;
+use hdk::holochain_json_api::{error::JsonError, json::JsonString};
+use hdk::prelude::Address;
 use hdk::{entry_definition::ValidatingEntryType, error::ZomeApiResult};
 
 use hdk_proc_macros::zome;
@@ -24,22 +27,22 @@ pub enum AnchorTypes {
     /// Points to a Identity
     User,
     /// Points to a GlobalEntryRef
-    CommunicationReference
+    CommunicationReference,
 }
 
 #[derive(Serialize, Deserialize, Debug, DefaultJson, Clone)]
 pub struct Anchor {
-    pub r#type: AnchorTypes
+    pub r#type: AnchorTypes,
 }
 
 #[derive(Serialize, Deserialize, Debug, DefaultJson, Clone)]
 pub struct DnaAddressReference {
-    pub dna_address: Address
+    pub address: Address,
 }
 
 #[derive(Serialize, Deserialize, Debug, DefaultJson, Clone)]
-pub struct EntryReference {
-    pub address: Address
+pub struct UserReference {
+    pub address: Address,
 }
 
 #[zome]
@@ -58,7 +61,28 @@ pub mod social_context {
                 Ok(())
             },
 
-            links: []
+            links: [
+                to!(
+                    "dna_address_reference",
+                    link_type: "",
+                    validation_package: || {
+                        hdk::ValidationPackageDefinition::Entry
+                    },
+                    validation: | _validation_data: hdk::LinkValidationData | {
+                        Ok(())
+                    }
+                ),
+                to!(
+                    "&agent_id",
+                    link_type: "",
+                    validation_package: || {
+                        hdk::ValidationPackageDefinition::Entry
+                    },
+                    validation: | _validation_data: hdk::LinkValidationData | {
+                        Ok(())
+                    }
+                )
+            ]
         )
     }
 
@@ -76,25 +100,57 @@ pub mod social_context {
                 Ok(())
             },
 
-            links: []
+            links: [
+                to!(
+                    "global_entry_ref",
+                    link_type: "",
+                    validation_package: || {
+                        hdk::ValidationPackageDefinition::Entry
+                    },
+                    validation: | _validation_data: hdk::LinkValidationData | {
+                        Ok(())
+                    }
+                )
+            ]
         )
     }
 
     #[entry_def]
     pub fn entry_ref_def() -> ValidatingEntryType {
         entry!(
-            name: "entry_reference",
+            name: "global_entry_ref",
             description: "Entry for marking a piece of communication",
             sharing: Sharing::Public,
             validation_package: || {
                 hdk::ValidationPackageDefinition::Entry
             },
 
-            validation: | _validation_data: hdk::EntryValidationData<EntryReference>| {
+            validation: | _validation_data: hdk::EntryValidationData<GlobalEntryRef>| {
                 Ok(())
             },
 
-            links: []
+            links: [
+                to!(
+                    "dna_address_reference",
+                    link_type: "source_dna",
+                    validation_package: || {
+                        hdk::ValidationPackageDefinition::Entry
+                    },
+                    validation: | _validation_data: hdk::LinkValidationData | {
+                        Ok(())
+                    }
+                ),
+                from!(
+                    "&agent_id",
+                    link_type: "",
+                    validation_package: || {
+                        hdk::ValidationPackageDefinition::Entry
+                    },
+                    validation: | _validation_data: hdk::LinkValidationData | {
+                        Ok(())
+                    }
+                )
+            ]
         )
     }
 
@@ -128,24 +184,24 @@ pub mod social_context {
 
     #[zome_fn("hc_public")]
     #[zome_fn("social_context")]
-    pub fn read_communication(
+    pub fn read_communications(
         by_dna: Option<Address>,
-        by_agent: Option<Identity>,
+        by_agent: Option<Address>,
         count: usize,
         page: usize,
-    ) -> ZomeApiResult<GlobalEntryRef> {
-        SocialContextDNA::read_communication(by_dna, by_agent, count, page)
+    ) -> ZomeApiResult<Vec<GlobalEntryRef>> {
+        SocialContextDNA::read_communications(by_dna, by_agent, count, page)
     }
 
     #[zome_fn("hc_public")]
     #[zome_fn("social_context")]
-    pub fn get_communication_methods(count: usize, page: usize) -> ZomeApiResult<GlobalEntryRef> {
+    pub fn get_communication_methods(count: usize, page: usize) -> ZomeApiResult<Vec<Address>> {
         SocialContextDNA::get_communication_methods(count, page)
     }
 
     #[zome_fn("hc_public")]
     #[zome_fn("social_context")]
-    pub fn members(count: usize, page: usize) -> ZomeApiResult<Option<Vec<Identity>>> {
-        SocialContextDNA::members(count, size)
+    pub fn members(count: usize, page: usize) -> ZomeApiResult<Option<Vec<Address>>> {
+        SocialContextDNA::members(count, page)
     }
 }
