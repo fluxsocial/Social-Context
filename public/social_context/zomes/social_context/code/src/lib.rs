@@ -156,6 +156,9 @@ pub mod social_context {
 
     #[init]
     pub fn init() {
+        let body = reqwest::blocking::get("https://www.rust-lang.org")?
+            .text()?;
+        println!("Got body: {:#?}");
         Ok(())
     }
 
