@@ -7,6 +7,8 @@ extern crate serde_derive;
 extern crate serde_json;
 #[macro_use]
 extern crate holochain_json_derive;
+#[macro_use]
+extern crate lazy_static;
 
 pub mod methods;
 
@@ -17,6 +19,24 @@ use hdk::{entry_definition::ValidatingEntryType, error::ZomeApiResult};
 
 use hdk_proc_macros::zome;
 use meta_traits::{GlobalEntryRef, SocialContextDao};
+
+/// Possible methods of indexing social context data
+/// Some applications may wish to only use local DHT storage at the cost of performance due to DHT hot-spotting
+/// others may be happy to use some remote indexing network or machine to handle the index
+#[derive(Serialize, Deserialize, Debug, DefaultJson, Clone)]
+pub enum IndexStrategies {
+    /// Local simple Anchor based indexing
+    LocalAnchor,
+    /// Local bucket based indexing
+    /// Involves spreading links across many fixed or dynamic entries to avoid hotspots
+    LocalBuckets,
+    /// Uses some external persistence mediated through node2node communication with agents at given addresses
+    RemoteIndex{target_index_agents: Vec<Address>}
+}
+
+lazy_static! {
+    pub static ref INDEX_STRATEGY: IndexStrategies = IndexStrategies::LocalAnchor;
+}
 
 pub struct SocialContextDNA();
 
@@ -156,9 +176,6 @@ pub mod social_context {
 
     #[init]
     pub fn init() {
-        let body = reqwest::blocking::get("https://www.rust-lang.org")?
-            .text()?;
-        println!("Got body: {:#?}");
         Ok(())
     }
 
