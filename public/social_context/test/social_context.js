@@ -89,8 +89,13 @@ orchestrator.registerScenario("post and read communication methods", async (s, t
   t.deepEqual(get_methods.Ok.length, 1)
 })
 
-// orchestrator.registerScenario("read members", async (s, t) => {
-//   const {alice, bob} = await s.players({alice: conductorConfig, bob: conductorConfig}, true)
-// })
+orchestrator.registerScenario("read members", async (s, t) => {
+  const {alice, bob} = await s.players({alice: conductorConfig, bob: conductorConfig}, true)
+  await s.consistency()
+
+  const get_members = await alice.call("SocialContext", "social_context", "members", {count: 10, page: 0})
+  t.deepEqual(get_members.hasOwnProperty("Ok"), true)
+  t.deepEqual(get_members.Ok.length, 2)
+})
 
 orchestrator.run()
