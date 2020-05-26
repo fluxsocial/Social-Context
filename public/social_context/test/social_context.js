@@ -76,9 +76,18 @@ orchestrator.registerScenario("post and read communication by dna & agent", asyn
   t.deepEqual(get_communications_by_agent.Ok.length, 2)
 })
 
-// orchestrator.registerScenario("post and read communication methods", async (s, t) => {
-//   const {alice, bob} = await s.players({alice: conductorConfig, bob: conductorConfig}, true)
-// })
+orchestrator.registerScenario("post and read communication methods", async (s, t) => {
+  const {alice, bob} = await s.players({alice: conductorConfig, bob: conductorConfig}, true)
+
+  //Create communication method 
+  const expression_method = await alice.call("SocialContext", "social_context", "register_communication_method", {dna_address: sample_dna_address})
+  t.deepEqual(expression_method.hasOwnProperty("Ok"), true)
+  await s.consistency()
+
+  const get_methods = await bob.call("SocialContext", "social_context", "get_communication_methods", {dna_address: sample_dna_address, count: 10, page: 0})
+  t.deepEqual(get_methods.hasOwnProperty("Ok"), true)
+  t.deepEqual(get_methods.Ok.length, 1)
+})
 
 // orchestrator.registerScenario("read members", async (s, t) => {
 //   const {alice, bob} = await s.players({alice: conductorConfig, bob: conductorConfig}, true)

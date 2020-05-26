@@ -146,7 +146,7 @@ impl SocialContextDao for SocialContextDNA {
         );
         Ok(hdk::get_links_with_options(
             &dna_anchor,
-            LinkMatch::Any,
+            LinkMatch::Exactly("communication_method"),
             LinkMatch::Any,
             GetLinksOptions {
                 status_request: Default::default(),
