@@ -12,6 +12,7 @@ process.on('unhandledRejection', error => {
 });
 
 const dnaPath = path.join(__dirname, "../dist/social_context.dna.json")
+const dna = Config.dna(dnaPath, 'SocialContextDNA')
 
 const orchestrator = new Orchestrator({
   middleware: combine(
@@ -22,33 +23,65 @@ const orchestrator = new Orchestrator({
     // specify that all "players" in the test are on the local machine, rather than
     // on remote machines
     localOnly,
-
-    // squash all instances from all conductors down into a single conductor,
-    // for in-memory testing purposes.
-    // Remove this middleware for other "real" network types which can actually
-    // send messages across conductors
-    singleConductor,
   ),
-})
+  //   waiter: {
+  //   hardTimeout: 100000,
+  //   strict: true,
+  // }
+});
 
-const dna = Config.dna(dnaPath, 'scaffold-test')
-const conductorConfig = Config.gen({myInstanceName: dna})
+const conductorConfig = Config.gen(
+  {
+    SocialContext: dna,
+  },
+  {
+    logger: {
+      type: 'debug',
+      state_dump: false,
+      // rules: {
+      //     rules: [{ exclude: true, pattern: ".*" }]
+      // }
+    },
+    network: {
+      type: 'sim2h',
+      sim2h_url: 'ws://localhost:9000'
+    }
+  }
+)
 
-orchestrator.registerScenario("description of example test", async (s, t) => {
+const sample_dna_address = "QmZ6mav8UBRzA5YzApoVRdUWQGCw4wgxBvEkkYN1sQXXkH"
+const sample_entry_address = "14f5e1afcbfb2a7d617ddb3423d742b3959eb36100e3efdc481c1966b4d06858"
+const sample_entry_address2 = "62ccd5f507d61e28fe590a6487e120d9bf87bf7d61a447c4ccddbc447382873e"
 
+orchestrator.registerScenario("post and read communication by dna & agent", async (s, t) => {
   const {alice, bob} = await s.players({alice: conductorConfig, bob: conductorConfig}, true)
 
-  // Make a call to a Zome function
-  // indicating the function, and passing it an input
-  const addr = await alice.call("myInstanceName", "my_zome", "create_my_entry", {"entry" : {"content":"sample content"}})
+  //Create communication
+  const expression1 = await alice.call("SocialContext", "social_context", "post", {expression_ref: {dna_address: sample_dna_address, entry_address: sample_entry_address} })
+  t.deepEqual(expression1.hasOwnProperty("Ok"), true)
 
-  // Wait for all network activity to settle
+  //Create second expression ref on same DNA
+  const expression2 = await alice.call("SocialContext", "social_context", "post", {expression_ref: {dna_address: sample_dna_address, entry_address: sample_entry_address2} })
+  t.deepEqual(expression2.hasOwnProperty("Ok"), true)
   await s.consistency()
 
-  const result = await bob.call("myInstanceName", "my_zome", "get_my_entry", {"address": addr.Ok})
+  //Read communications by DNA
+  const get_communications = await bob.call("SocialContext", "social_context", "read_communications", {by_dna: sample_dna_address, by_agent: null, count: 10, page: 0})
+  t.deepEqual(get_communications.hasOwnProperty("Ok"), true)
+  t.deepEqual(get_communications.Ok.length, 2)
 
-  // check for equality of the actual and expected results
-  t.deepEqual(result, { Ok: { App: [ 'my_entry', '{"content":"sample content"}' ] } })
+  //Read communications by agent
+  const get_communications_by_agent = await bob.call("SocialContext", "social_context", "read_communications", {by_dna: null, by_agent: alice.instance('SocialContext').agentAddress, count: 10, page: 0})
+  t.deepEqual(get_communications_by_agent.hasOwnProperty("Ok"), true)
+  t.deepEqual(get_communications_by_agent.Ok.length, 2)
 })
+
+// orchestrator.registerScenario("post and read communication methods", async (s, t) => {
+//   const {alice, bob} = await s.players({alice: conductorConfig, bob: conductorConfig}, true)
+// })
+
+// orchestrator.registerScenario("read members", async (s, t) => {
+//   const {alice, bob} = await s.players({alice: conductorConfig, bob: conductorConfig}, true)
+// })
 
 orchestrator.run()
