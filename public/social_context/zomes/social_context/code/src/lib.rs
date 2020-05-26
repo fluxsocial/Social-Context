@@ -31,7 +31,7 @@ pub enum IndexStrategies {
     /// Involves spreading links across many fixed or dynamic entries to avoid hotspots
     LocalBuckets,
     /// Uses some external persistence mediated through node2node communication with agents at given addresses
-    RemoteIndex{target_index_agents: Vec<Address>}
+    RemoteIndex { target_index_agents: Vec<Address> },
 }
 
 lazy_static! {
@@ -84,7 +84,7 @@ pub mod social_context {
             links: [
                 to!(
                     "dna_address_reference",
-                    link_type: "",
+                    link_type: "communication_method",
                     validation_package: || {
                         hdk::ValidationPackageDefinition::Entry
                     },
@@ -93,8 +93,8 @@ pub mod social_context {
                     }
                 ),
                 to!(
-                    "&agent_id",
-                    link_type: "",
+                    "%agent_id",
+                    link_type: "communicator",
                     validation_package: || {
                         hdk::ValidationPackageDefinition::Entry
                     },
@@ -121,16 +121,6 @@ pub mod social_context {
             },
 
             links: [
-                to!(
-                    "global_entry_ref",
-                    link_type: "",
-                    validation_package: || {
-                        hdk::ValidationPackageDefinition::Entry
-                    },
-                    validation: | _validation_data: hdk::LinkValidationData | {
-                        Ok(())
-                    }
-                )
             ]
         )
     }
@@ -150,9 +140,9 @@ pub mod social_context {
             },
 
             links: [
-                to!(
+                from!(
                     "dna_address_reference",
-                    link_type: "source_dna",
+                    link_type: "communication",
                     validation_package: || {
                         hdk::ValidationPackageDefinition::Entry
                     },
@@ -161,8 +151,8 @@ pub mod social_context {
                     }
                 ),
                 from!(
-                    "&agent_id",
-                    link_type: "",
+                    "%agent_id",
+                    link_type: "agent_communication",
                     validation_package: || {
                         hdk::ValidationPackageDefinition::Entry
                     },

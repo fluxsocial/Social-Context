@@ -19,6 +19,7 @@ impl SocialContextDao for SocialContextDNA {
             }
             .into(),
         ))?;
+        hdk::debug(format!("Created dna ref: {:?}\n\n", dna_reference))?;
         let entry_reference = hdk::commit_entry(&Entry::App(
             "global_entry_ref".into(),
             GlobalEntryRef {
@@ -27,8 +28,8 @@ impl SocialContextDao for SocialContextDNA {
             }
             .into(),
         ))?;
-        hdk::link_entries(&dna_reference, &entry_reference, "", "")?;
-        hdk::link_entries(&AGENT_ADDRESS, &entry_reference, "", "")?;
+        hdk::link_entries(&dna_reference, &entry_reference, "communication", "")?;
+        hdk::link_entries(&AGENT_ADDRESS, &entry_reference, "agent_communication", "")?;
         Ok(())
     }
 
@@ -47,7 +48,7 @@ impl SocialContextDao for SocialContextDNA {
             }
             .into(),
         ))?;
-        hdk::link_entries(&dna_anchor, &dna_reference, "", "")?;
+        hdk::link_entries(&dna_anchor, &dna_reference, "communication_method", "")?;
         Ok(())
     }
 
@@ -82,9 +83,10 @@ impl SocialContextDao for SocialContextDNA {
                     )),
                     Hash::SHA2256,
                 );
+                hdk::debug(format!("Getting dna ref: {:?}\n\n", dna_reference_entry))?;
                 hdk::get_links_with_options(
                     &dna_reference_entry,
-                    LinkMatch::Any,
+                    LinkMatch::Exactly("communication"),
                     LinkMatch::Any,
                     GetLinksOptions {
                         status_request: Default::default(),
@@ -107,7 +109,7 @@ impl SocialContextDao for SocialContextDNA {
             None => match by_agent {
                 Some(identity) => hdk::get_links_with_options(
                     &identity,
-                    LinkMatch::Any,
+                    LinkMatch::Exactly("agent_communication"),
                     LinkMatch::Any,
                     GetLinksOptions {
                         status_request: Default::default(),
