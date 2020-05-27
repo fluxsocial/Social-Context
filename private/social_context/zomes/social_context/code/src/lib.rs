@@ -12,11 +12,11 @@ extern crate lazy_static;
 
 pub mod methods;
 
+use hdk::api::AGENT_ADDRESS;
 use hdk::holochain_core_types::dna::entry_types::Sharing;
 use hdk::holochain_json_api::{error::JsonError, json::JsonString};
 use hdk::prelude::{Address, Entry};
 use hdk::{entry_definition::ValidatingEntryType, error::ZomeApiResult};
-use hdk::api::AGENT_ADDRESS;
 
 use hdk_proc_macros::zome;
 use meta_traits::{GlobalEntryRef, SocialContextDao};
@@ -179,7 +179,7 @@ pub mod social_context {
                 hdk::link_entries(&user_anchor, &AGENT_ADDRESS, "communicator", "")?;
             }
             // Other index logic would be implemented here
-            _ => unimplemented!()
+            _ => unimplemented!(),
         };
         Ok(())
     }

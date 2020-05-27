@@ -11,6 +11,16 @@ serde_derive = "1.0"
 hdk = "=0.0.47-alpha1"
 holochain_wasm_utils = "=0.0.47-alpha1"
 holochain_json_derive = "0.0"
+hdk_proc_macros = "=0.0.47-alpha1"
+meta-traits = { git = "https://github.com/juntofoundation/Holochain-Trait-Definitions", branch = "master" }
+multihash = "0.8.0"
+lazy_static = "1.4.0"
+futures = "=0.3.2"
+futures-util = "=0.3.2"
+futures-macro = "=0.3.2"
+
+[patch."https://github.com/juntofoundation/Holochain-Trait-Definitions"]
+meta-traits = { path = "../../../../../../Holochain-Trait-Definitions" }
 
 [lib]
 path = "src/lib.rs"
