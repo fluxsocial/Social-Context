@@ -1,20 +1,18 @@
+use hdk::holochain_persistence_api::hash::HashString;
 use hdk::{
     error::ZomeApiResult,
-    prelude::{Entry, LinkMatch},
+    prelude::{Entry, LinkMatch, Address},
+    holochain_json_api::json::JsonString,
 };
 use meta_traits::{SocialGraphDao, Identity};
+use multihash::Hash;
 
 use crate::{SocialGraph, FollowersAnchor, FollowingsAnchor, FriendshipRequest};
 
 pub fn create_anchors() -> Result<(), String> {
     let agent = hdk::AGENT_ADDRESS.clone(); 
-    let anchor1 = Entry::App("followings_anchor".into(), (FollowingsAnchor{ agent: agent.clone() }).into()); 
-    let anchor1_addr = hdk::commit_entry(&anchor1)?; 
-    hdk::link_entries(&agent, &anchor1_addr, "has_followings_anchor", "")?;
-
-    let anchor2 = Entry::App("followers_anchor".into(), (FollowersAnchor{ agent: agent.clone() }).into()); 
-    let anchor2_addr = hdk::commit_entry(&anchor2)?;
-    hdk::link_entries(&agent, &anchor2_addr, "has_followers_anchor", "")?;
+    hdk::commit_entry(&Entry::App("followings_anchor".into(), (FollowingsAnchor{ agent: agent.clone() }).into()))?; 
+    hdk::commit_entry(&Entry::App("followers_anchor".into(), (FollowersAnchor{ agent: agent.clone() }).into()))?;
     
     Ok(())
 }
@@ -32,57 +30,88 @@ impl SocialGraphDao for SocialGraph {
         Ok(vec![])
     }
     
-    fn my_followings(_by: Option<String>) -> ZomeApiResult<Vec<Identity>> {
-        let my_agent_address = hdk::AGENT_ADDRESS.clone().into();
-        let followings_anchor_addresses = hdk::get_links(
-            &my_agent_address, 
-            LinkMatch::Exactly("has_followings_anchor"), 
+    fn my_followings(by: Option<String>) -> ZomeApiResult<Vec<Identity>> {
+        let source_agent = hdk::AGENT_ADDRESS.clone();
+        let followings_anchor_addresses: Address = HashString::encode_from_json_string(
+            JsonString::from(Entry::App(
+                "followings_anchor".into(),
+                FollowingsAnchor { agent: source_agent }.into(),
+            )),
+            Hash::SHA2256,
+        );
+        let by_tag = if by.is_some() {
+            LinkMatch::Exactly(by.as_ref().map(String::as_str).unwrap())
+        } else {
             LinkMatch::Any
-        )?.addresses(); 
-        let anchor_addr = followings_anchor_addresses.first().unwrap(); 
-    
+        };
+
         match hdk::get_links(
-            &anchor_addr, 
+            &followings_anchor_addresses, 
             LinkMatch::Exactly("follows"), 
-            LinkMatch::Any
+            by_tag
         ) {
             Ok(result) => Ok(result.addresses()), 
             Err(err) => Err(err) 
         }
     }
 
-    fn following(_following_agent: Identity, _by: Option<String>) -> ZomeApiResult<Vec<Identity>> {
-        Ok(vec![])
+    fn following(following_agent: Identity, by: Option<String>) -> ZomeApiResult<Vec<Identity>> {
+        let followings_anchor_addresses: Address = HashString::encode_from_json_string(
+            JsonString::from(Entry::App(
+                "followings_anchor".into(),
+                FollowingsAnchor { agent: following_agent }.into(),
+            )),
+            Hash::SHA2256,
+        );
+
+        let by_tag = if by.is_some() {
+            LinkMatch::Exactly(by.as_ref().map(String::as_str).unwrap())
+        } else {
+            LinkMatch::Any
+        };
+
+        match hdk::get_links(
+            &followings_anchor_addresses, 
+            LinkMatch::Exactly("follows"), 
+            by_tag
+        ) {
+            Ok(result) => Ok(result.addresses()), 
+            Err(err) => Err(err) 
+        }
     }
 
     fn nth_level_following(_n: usize, _following_agent: Identity, _by: Option<String>) -> ZomeApiResult<Vec<Identity>> {
         Ok(vec![])
     }
     
-    fn follow(target_agent: Identity, _by: Option<String>) -> ZomeApiResult<()> {
-        let agent_addr = hdk::AGENT_ADDRESS.clone(); 
-        let follower_anchor_addr = hdk::get_links(
-            &agent_addr, 
-            LinkMatch::Exactly("has_followings_anchor"),
-            LinkMatch::Any
-        )?.addresses();
-        let fad = follower_anchor_addr.first().unwrap();
-        hdk::link_entries(&fad, &target_agent, "follows", "")?;
-    
-        let followed_anchor_addr = hdk::get_links(
-            & target_agent.clone(), 	
-            LinkMatch::Exactly("has_followings_anchor"),
-            LinkMatch::Any
-        )?.addresses();
-        let fad2 = followed_anchor_addr.first().unwrap(); 
-        hdk::link_entries(&fad2, &agent_addr, "is_followed_by", "")?;
+    fn follow(target_agent: Identity, by: Option<String>) -> ZomeApiResult<()> {
+        let source_agent = hdk::AGENT_ADDRESS.clone();
+        //Create follow link between sources followings_anchor -> target identity
+        let followings_anchor_addresses: Address = HashString::encode_from_json_string(
+            JsonString::from(Entry::App(
+                "followings_anchor".into(),
+                FollowingsAnchor { agent: source_agent.clone() }.into(),
+            )),
+            Hash::SHA2256,
+        );
+        hdk::link_entries(&followings_anchor_addresses, &target_agent, "follows", &by.unwrap_or(String::from("")))?;
+        
+        //Create a follow reference on targets followers_anchor so that they have a place to view follows
+        let followed_anchor_addr: Address = HashString::encode_from_json_string(
+            JsonString::from(Entry::App(
+                "followers_anchor".into(),
+                FollowingsAnchor { agent: target_agent.clone() }.into(),
+            )),
+            Hash::SHA2256,
+        );
+        hdk::link_entries(&followed_anchor_addr, &source_agent.clone(), "followed_by", &by.unwrap_or(String::from(""))?;
     
         Ok(())
     }
     
-    fn unfollow(target_agent: Identity, _by: Option<String>) -> ZomeApiResult<()> {
+    fn unfollow(target_agent: Identity, by: Option<String>) -> ZomeApiResult<()> {
         let sender_address = hdk::AGENT_ADDRESS.clone().into();
-        hdk::remove_link(&sender_address, &target_agent, "follows", "")?;
+        hdk::remove_link(&sender_address, &target_agent, "follows", &by.unwrap_or(String::from(""))?;
         Ok(())
     }
     

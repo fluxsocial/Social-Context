@@ -51,19 +51,9 @@ pub fn followers_anchor_def() -> ValidatingEntryType {
             Ok(())
         }, 
         links: [
-            from!(
-                EntryType::AgentId, 
-                link_type: "has_followers_anchor", 
-                validation_package: || {
-                    hdk::ValidationPackageDefinition::Entry
-                },
-                validation: |_validation_data: hdk::LinkValidationData | {
-                    Ok(())
-                }
-            ),
             to!(
                 EntryType::AgentId, 
-                link_type: "is_followed_by", 
+                link_type: "followed_by", 
                 validation_package: || {
                     hdk::ValidationPackageDefinition::Entry
                 },
@@ -87,16 +77,6 @@ pub fn followings_anchor_def() -> ValidatingEntryType {
             Ok(())
         }, 
         links: [
-            from!(
-                EntryType::AgentId, 
-                link_type: "has_followings_anchor", 
-                validation_package: || {
-                    hdk::ValidationPackageDefinition::Entry
-                },
-                validation: |_validation_data: hdk::LinkValidationData | {
-                    Ok(())
-                }
-            ),
             to!(
                 EntryType::AgentId, 
                 link_type: "follows", 
