@@ -1,7 +1,7 @@
 use hdk::holochain_core_types::dna::entry_types::Sharing;
 use hdk::prelude::{EntryType, ValidatingEntryType};
 
-use crate::{FriendshipAnchor, FollowersAnchor, FollowingsAnchor};
+use crate::{FollowersAnchor, FollowingsAnchor, FriendshipAnchor};
 
 pub fn friendship_anchor() -> ValidatingEntryType {
     entry!(
@@ -26,7 +26,7 @@ pub fn friendship_anchor() -> ValidatingEntryType {
                 }
             )
         ]
-    )   
+    )
 }
 
 pub fn friendship_receive_request_def() -> ValidatingEntryType {
@@ -83,19 +83,19 @@ pub fn friendship_request_request_def() -> ValidatingEntryType {
 
 pub fn followers_anchor_def() -> ValidatingEntryType {
     entry!(
-        name: "followers_anchor", 
-        description: "Anchor for foreign agents to use for registering a follow reference", 
-        sharing: Sharing::Public, 
+        name: "followers_anchor",
+        description: "Anchor for foreign agents to use for registering a follow reference",
+        sharing: Sharing::Public,
         validation_package: || {
             hdk::ValidationPackageDefinition::Entry
-        }, 
+        },
         validation: | _validation_data: hdk::EntryValidationData<FollowersAnchor> | {
             Ok(())
-        }, 
+        },
         links: [
             to!(
-                EntryType::AgentId, 
-                link_type: "followed", 
+                EntryType::AgentId,
+                link_type: "followed",
                 validation_package: || {
                     hdk::ValidationPackageDefinition::Entry
                 },
@@ -109,19 +109,19 @@ pub fn followers_anchor_def() -> ValidatingEntryType {
 
 pub fn followings_anchor_def() -> ValidatingEntryType {
     entry!(
-        name: "followings_anchor", 
-        description: "Anchor for self to use for registering which agents they are following", 
-        sharing: Sharing::Public, 
+        name: "followings_anchor",
+        description: "Anchor for self to use for registering which agents they are following",
+        sharing: Sharing::Public,
         validation_package: || {
             hdk::ValidationPackageDefinition::Entry
-        }, 
+        },
         validation: | _validation_data: hdk::EntryValidationData<FollowingsAnchor> | {
             Ok(())
-        }, 
+        },
         links: [
             to!(
-                EntryType::AgentId, 
-                link_type: "follows", 
+                EntryType::AgentId,
+                link_type: "follows",
                 validation_package: || {
                     hdk::ValidationPackageDefinition::Entry
                 },

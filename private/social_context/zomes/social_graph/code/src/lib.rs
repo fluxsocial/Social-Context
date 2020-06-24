@@ -8,27 +8,27 @@ extern crate serde_json;
 #[macro_use]
 extern crate holochain_json_derive;
 
-pub mod methods;
 pub mod definitions;
+pub mod methods;
 
 use hdk::holochain_json_api::{error::JsonError, json::JsonString};
 use hdk::prelude::Address;
 use hdk::{entry_definition::ValidatingEntryType, error::ZomeApiResult};
 use hdk_proc_macros::zome;
 
-use meta_traits::{SocialGraphDao, Identity};
+use meta_traits::{Identity, SocialGraphDao};
 
 #[derive(Serialize, Deserialize, Debug, DefaultJson, Clone)]
 pub enum FriendshipAnchorTypes {
     Live,
     Request,
-    Receive
+    Receive,
 }
 
 #[derive(Serialize, Deserialize, Debug, DefaultJson, Clone)]
 pub struct FriendshipAnchor {
     agent: Address,
-    anchor_type: FriendshipAnchorTypes
+    anchor_type: FriendshipAnchorTypes,
 }
 
 impl FriendshipAnchor {
@@ -37,36 +37,48 @@ impl FriendshipAnchor {
             FriendshipAnchorTypes::Live => HashString::encode_from_json_string(
                 JsonString::from(Entry::App(
                     "friendship_anchor".into(),
-                    FriendshipRequest { agent: agent, anchor_type: FriendshipAnchorTypes::Live }.into(),
+                    FriendshipRequest {
+                        agent: agent,
+                        anchor_type: FriendshipAnchorTypes::Live,
+                    }
+                    .into(),
                 )),
                 Hash::SHA2256,
             ),
             FriendshipAnchorTypes::Receive => HashString::encode_from_json_string(
                 JsonString::from(Entry::App(
                     "friendship_receive_anchor".into(),
-                    FriendshipRequest { agent: agent, anchor_type: FriendshipAnchorTypes::Receive }.into(),
+                    FriendshipRequest {
+                        agent: agent,
+                        anchor_type: FriendshipAnchorTypes::Receive,
+                    }
+                    .into(),
                 )),
                 Hash::SHA2256,
-            )
+            ),
             FriendshipAnchorTypes::Request => HashString::encode_from_json_string(
                 JsonString::from(Entry::App(
                     "friendship_request_anchor".into(),
-                    FriendshipRequest { agent: agent, anchor_type: FriendshipAnchorTypes::Receive }.into(),
+                    FriendshipRequest {
+                        agent: agent,
+                        anchor_type: FriendshipAnchorTypes::Receive,
+                    }
+                    .into(),
                 )),
                 Hash::SHA2256,
-            )
+            ),
         }
     }
 }
 
 #[derive(Serialize, Deserialize, Debug, DefaultJson, Clone)]
 pub struct FollowingsAnchor {
-	agent: Address
+    agent: Address,
 }
 
 #[derive(Serialize, Deserialize, Debug, DefaultJson, Clone)]
 pub struct FollowersAnchor {
-	agent: Address
+    agent: Address,
 }
 
 impl FollowersAnchor {
@@ -138,13 +150,14 @@ pub mod social_context {
 
     #[zome_fn("hc_public")]
     #[zome_fn("social_graph")]
-    pub fn nth_level_followers(        
+    pub fn nth_level_followers(
         n: usize,
         followed_agent: Identity,
-        by: Option<String>) -> ZomeApiResult<Vec<Identity>> {
+        by: Option<String>,
+    ) -> ZomeApiResult<Vec<Identity>> {
         SocialGraph::nth_level_followers(n, followed_agent, by)
     }
-    
+
     #[zome_fn("hc_public")]
     #[zome_fn("social_graph")]
     pub fn my_followings(by: Option<String>) -> ZomeApiResult<Vec<Identity>> {
@@ -159,10 +172,11 @@ pub mod social_context {
 
     #[zome_fn("hc_public")]
     #[zome_fn("social_graph")]
-    pub fn nth_level_following(        
+    pub fn nth_level_following(
         n: usize,
         following_agent: Identity,
-        by: Option<String>) -> ZomeApiResult<Vec<Identity>> {
+        by: Option<String>,
+    ) -> ZomeApiResult<Vec<Identity>> {
         SocialGraph::nth_level_following(n, following_agent, by)
     }
 
