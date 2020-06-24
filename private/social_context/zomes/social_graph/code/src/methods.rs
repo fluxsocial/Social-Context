@@ -234,15 +234,20 @@ impl SocialGraphDao for SocialGraph {
             LinkMatch::Exactly("friendship_request"),
             LinkMatch::Exactly(target_agent.to_string().as_ref()),
         )?.addresses().len() > 0 {
+            let target_request_anchor = FriendshipAnchor::generate_anchor_address(target_agent.clone(), FriendshipAnchorTypes::Request);
             //Remove request from source user
             hdk::remove_link(&source_receive_anchor, &target_agent, "friendship_request", target_agent.to_string().as_ref())?;
+            hdk::remove_link(&target_request_anchor, &source_agent, "friendship_request", source_agent.to_string().as_ref())?;
             //Create friendship link on source and targets live anchor
             let sources_live_anchor = FriendshipAnchor::generate_anchor_address(source_agent.clone(), FriendshipAnchorTypes::Live);
             hdk::link_entries(&sources_live_anchor, &target_agent, "friendship", target_agent.to_string().as_ref())?;
             hdk::link_entries(&target_live_anchor, &source_agent, "friendship", source_agent.to_string().as_ref())?;
         } else {
-            //Create request link on targets anchor
+            //Create request link on targets receive anchor
             hdk::link_entries(&target_receive_anchor, &source_agent, "friendship_request", source_agent.to_string().as_ref())?;
+            let source_request_anchor = FriendshipAnchor::generate_anchor_address(source_agent.clone(), FriendshipAnchorTypes::Request);
+            //Create request link on sources request anchor
+            hdk::link_entries(&source_request_anchor, &target_agent, "friendship_request", target_agent.to_string().as_ref())?;
         };
 
         Ok(())
@@ -263,10 +268,11 @@ impl SocialGraphDao for SocialGraph {
     }
 
     fn incoming_friendship_requests() -> ZomeApiResult<Vec<Identity>> {
-        let my_agent_address = hdk::AGENT_ADDRESS.clone();
+        let source_agent = hdk::AGENT_ADDRESS.clone();
+        let source_receive_anchor: Address = FriendshipAnchor::generate_anchor_address(source_agent, FriendshipAnchorTypes::Receive);
         match hdk::api::get_links(
-            &my_agent_address,
-            LinkMatch::Exactly("friendship_request_receive"),
+            &source_receive_anchor,
+            LinkMatch::Exactly("friendship_request"),
             LinkMatch::Any,
         ) {
             Ok(result) => Ok(result
@@ -279,10 +285,11 @@ impl SocialGraphDao for SocialGraph {
     }
 
     fn outgoing_friendship_requests() -> ZomeApiResult<Vec<Identity>> {
-        let my_agent_address = hdk::AGENT_ADDRESS.clone();
+        let source_agent = hdk::AGENT_ADDRESS.clone();
+        let source_request_anchor: Address = FriendshipAnchor::generate_anchor_address(source_agent, FriendshipAnchorTypes::Request);
         match hdk::api::get_links(
-            &my_agent_address,
-            LinkMatch::Exactly("friendship_request_send"),
+            &source_request_anchor,
+            LinkMatch::Exactly("friendship_request"),
             LinkMatch::Any,
         ) {
             Ok(result) => Ok(result
