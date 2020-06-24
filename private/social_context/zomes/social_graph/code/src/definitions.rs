@@ -17,7 +17,7 @@ pub fn friendship_anchor() -> ValidatingEntryType {
         links: [
             to!(
                 EntryType::AgentId,
-                link_type: "friendship_request",
+                link_type: "friendship",
                 validation_package: || {
                     hdk::ValidationPackageDefinition::Entry
                 },

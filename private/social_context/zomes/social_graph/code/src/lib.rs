@@ -11,10 +11,12 @@ extern crate holochain_json_derive;
 pub mod definitions;
 pub mod methods;
 
+use hdk::holochain_persistence_api::hash::HashString;
 use hdk::holochain_json_api::{error::JsonError, json::JsonString};
-use hdk::prelude::Address;
+use hdk::prelude::{Address, Entry};
 use hdk::{entry_definition::ValidatingEntryType, error::ZomeApiResult};
 use hdk_proc_macros::zome;
+use multihash::Hash;
 
 use meta_traits::{Identity, SocialGraphDao};
 
@@ -37,7 +39,7 @@ impl FriendshipAnchor {
             FriendshipAnchorTypes::Live => HashString::encode_from_json_string(
                 JsonString::from(Entry::App(
                     "friendship_anchor".into(),
-                    FriendshipRequest {
+                    FriendshipAnchor {
                         agent: agent,
                         anchor_type: FriendshipAnchorTypes::Live,
                     }
@@ -48,7 +50,7 @@ impl FriendshipAnchor {
             FriendshipAnchorTypes::Receive => HashString::encode_from_json_string(
                 JsonString::from(Entry::App(
                     "friendship_receive_anchor".into(),
-                    FriendshipRequest {
+                    FriendshipAnchor {
                         agent: agent,
                         anchor_type: FriendshipAnchorTypes::Receive,
                     }
@@ -59,7 +61,7 @@ impl FriendshipAnchor {
             FriendshipAnchorTypes::Request => HashString::encode_from_json_string(
                 JsonString::from(Entry::App(
                     "friendship_request_anchor".into(),
-                    FriendshipRequest {
+                    FriendshipAnchor {
                         agent: agent,
                         anchor_type: FriendshipAnchorTypes::Receive,
                     }
@@ -107,11 +109,22 @@ impl FollowingsAnchor {
 
 pub struct SocialGraph();
 
+///Zome definitions
 #[zome]
 pub mod social_context {
     #[entry_def]
+    pub fn friendship_def() -> ValidatingEntryType {
+        definitions::friendship_anchor()
+    }
+
+    #[entry_def]
     pub fn friendship_request_def() -> ValidatingEntryType {
-        definitions::friendship_request_def()
+        definitions::friendship_request_request_def()
+    }
+
+    #[entry_def]
+    pub fn friendship_receive_def() -> ValidatingEntryType {
+        definitions::friendship_receive_request_def()
     }
 
     #[entry_def]
