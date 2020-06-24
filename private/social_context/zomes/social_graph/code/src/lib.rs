@@ -19,18 +19,45 @@ use hdk_proc_macros::zome;
 use meta_traits::{SocialGraphDao, Identity};
 
 #[derive(Serialize, Deserialize, Debug, DefaultJson, Clone)]
-struct FriendshipRequest {
+pub enum FriendshipAnchorTypes {
+    Live,
+    Request,
+    Receive
 }
 
-// #[derive(Serialize, Deserialize, Debug, DefaultJson, Clone)]
-// pub struct OutgoingFriendshipRequestsAnchor {
-// 	agent: HashString
-// }
-// 
-// #[derive(Serialize, Deserialize, Debug, DefaultJson, Clone)]
-// pub struct IncomingFriendshipRequestsAnchor {
-// 	agent: HashString
-// }
+#[derive(Serialize, Deserialize, Debug, DefaultJson, Clone)]
+pub struct FriendshipAnchor {
+    agent: Address,
+    anchor_type: FriendshipAnchorTypes
+}
+
+impl FriendshipAnchor {
+    pub fn generate_anchor_address(agent: Address, anchor_type: FriendshipAnchorTypes) -> Address {
+        match anchor_type {
+            FriendshipAnchorTypes::Live => HashString::encode_from_json_string(
+                JsonString::from(Entry::App(
+                    "friendship_anchor".into(),
+                    FriendshipRequest { agent: agent, anchor_type: FriendshipAnchorTypes::Live }.into(),
+                )),
+                Hash::SHA2256,
+            ),
+            FriendshipAnchorTypes::Receive => HashString::encode_from_json_string(
+                JsonString::from(Entry::App(
+                    "friendship_receive_anchor".into(),
+                    FriendshipRequest { agent: agent, anchor_type: FriendshipAnchorTypes::Receive }.into(),
+                )),
+                Hash::SHA2256,
+            )
+            FriendshipAnchorTypes::Request => HashString::encode_from_json_string(
+                JsonString::from(Entry::App(
+                    "friendship_request_anchor".into(),
+                    FriendshipRequest { agent: agent, anchor_type: FriendshipAnchorTypes::Receive }.into(),
+                )),
+                Hash::SHA2256,
+            )
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, DefaultJson, Clone)]
 pub struct FollowingsAnchor {
@@ -42,11 +69,31 @@ pub struct FollowersAnchor {
 	agent: Address
 }
 
-#[derive(Serialize, Deserialize, Debug, DefaultJson, Clone)]
-pub struct Friendship {}
+impl FollowersAnchor {
+    fn generate_anchor_address(agent: Address) -> Address {
+        HashString::encode_from_json_string(
+            JsonString::from(Entry::App(
+                "followers_anchor".into(),
+                FollowersAnchor { agent: agent }.into(),
+            )),
+            Hash::SHA2256,
+        )
+    }
+}
+
+impl FollowingsAnchor {
+    fn generate_anchor_address(agent: Address) -> Address {
+        HashString::encode_from_json_string(
+            JsonString::from(Entry::App(
+                "followings_anchor".into(),
+                FollowingsAnchor { agent: agent }.into(),
+            )),
+            Hash::SHA2256,
+        )
+    }
+}
 
 pub struct SocialGraph();
-
 
 #[zome]
 pub mod social_context {
