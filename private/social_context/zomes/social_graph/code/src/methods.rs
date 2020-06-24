@@ -11,6 +11,8 @@ use crate::{SocialGraph, FollowersAnchor, FollowingsAnchor, FriendshipRequest};
 
 pub fn create_anchors() -> Result<(), String> {
     let agent = hdk::AGENT_ADDRESS.clone(); 
+    //No need for link between anchor -> agent as this already contained inside anchor; 
+    //This means address is always derivable for agent so long as they know their agent address
     hdk::commit_entry(&Entry::App("followings_anchor".into(), (FollowingsAnchor{ agent: agent.clone() }).into()))?; 
     hdk::commit_entry(&Entry::App("followers_anchor".into(), (FollowersAnchor{ agent: agent.clone() }).into()))?;
     
@@ -18,12 +20,55 @@ pub fn create_anchors() -> Result<(), String> {
 }
 
 impl SocialGraphDao for SocialGraph {
-    fn my_followers(_by: Option<String>) -> ZomeApiResult<Vec<Identity>> {
-        Ok(vec![])
+    fn my_followers(by: Option<String>) -> ZomeApiResult<Vec<Identity>> {
+        let source_agent = hdk::AGENT_ADDRESS.clone();
+        let followers_anchor_addr: Address = HashString::encode_from_json_string(
+            JsonString::from(Entry::App(
+                "followers_anchor".into(),
+                FollowingsAnchor { agent: source_agent }.into(),
+            )),
+            Hash::SHA2256,
+        );
+
+        let by_tag = if by.is_some() {
+            LinkMatch::Exactly(by.as_ref().map(String::as_str).unwrap())
+        } else {
+            LinkMatch::Any
+        };
+
+        match hdk::get_links(
+            &followers_anchor_addr, 
+            LinkMatch::Exactly("followed"), 
+            by_tag
+        ) {
+            Ok(result) => Ok(result.addresses()), 
+            Err(err) => Err(err) 
+        }
     }
 
-    fn followers(_followed_agent: Identity, _by: Option<String>) -> ZomeApiResult<Vec<Identity>> {
-        Ok(vec![])
+    fn followers(followed_agent: Identity, by: Option<String>) -> ZomeApiResult<Vec<Identity>> {
+        let followers_anchor_addr: Address = HashString::encode_from_json_string(
+            JsonString::from(Entry::App(
+                "followers_anchor".into(),
+                FollowingsAnchor { agent: followed_agent.clone() }.into(),
+            )),
+            Hash::SHA2256,
+        );
+
+        let by_tag = if by.is_some() {
+            LinkMatch::Exactly(by.as_ref().map(String::as_str).unwrap())
+        } else {
+            LinkMatch::Any
+        };
+
+        match hdk::get_links(
+            &followers_anchor_addr, 
+            LinkMatch::Exactly("followed"), 
+            by_tag
+        ) {
+            Ok(result) => Ok(result.addresses()), 
+            Err(err) => Err(err) 
+        }
     }
 
     fn nth_level_followers(_n: usize, _followed_agent: Identity, _by: Option<String>) -> ZomeApiResult<Vec<Identity>> {
@@ -32,13 +77,14 @@ impl SocialGraphDao for SocialGraph {
     
     fn my_followings(by: Option<String>) -> ZomeApiResult<Vec<Identity>> {
         let source_agent = hdk::AGENT_ADDRESS.clone();
-        let followings_anchor_addresses: Address = HashString::encode_from_json_string(
+        let followings_anchor_addr: Address = HashString::encode_from_json_string(
             JsonString::from(Entry::App(
                 "followings_anchor".into(),
                 FollowingsAnchor { agent: source_agent }.into(),
             )),
             Hash::SHA2256,
         );
+
         let by_tag = if by.is_some() {
             LinkMatch::Exactly(by.as_ref().map(String::as_str).unwrap())
         } else {
@@ -46,7 +92,7 @@ impl SocialGraphDao for SocialGraph {
         };
 
         match hdk::get_links(
-            &followings_anchor_addresses, 
+            &followings_anchor_addr, 
             LinkMatch::Exactly("follows"), 
             by_tag
         ) {
@@ -56,7 +102,7 @@ impl SocialGraphDao for SocialGraph {
     }
 
     fn following(following_agent: Identity, by: Option<String>) -> ZomeApiResult<Vec<Identity>> {
-        let followings_anchor_addresses: Address = HashString::encode_from_json_string(
+        let followings_anchor_addr: Address = HashString::encode_from_json_string(
             JsonString::from(Entry::App(
                 "followings_anchor".into(),
                 FollowingsAnchor { agent: following_agent }.into(),
@@ -71,7 +117,7 @@ impl SocialGraphDao for SocialGraph {
         };
 
         match hdk::get_links(
-            &followings_anchor_addresses, 
+            &followings_anchor_addr, 
             LinkMatch::Exactly("follows"), 
             by_tag
         ) {
@@ -86,6 +132,7 @@ impl SocialGraphDao for SocialGraph {
     
     fn follow(target_agent: Identity, by: Option<String>) -> ZomeApiResult<()> {
         let source_agent = hdk::AGENT_ADDRESS.clone();
+        let by = &by.unwrap_or(String::from(""));
         //Create follow link between sources followings_anchor -> target identity
         let followings_anchor_addresses: Address = HashString::encode_from_json_string(
             JsonString::from(Entry::App(
@@ -94,24 +141,40 @@ impl SocialGraphDao for SocialGraph {
             )),
             Hash::SHA2256,
         );
-        hdk::link_entries(&followings_anchor_addresses, &target_agent, "follows", &by.unwrap_or(String::from("")))?;
+        hdk::link_entries(&followings_anchor_addresses, &target_agent, "follows", by)?;
         
         //Create a follow reference on targets followers_anchor so that they have a place to view follows
-        let followed_anchor_addr: Address = HashString::encode_from_json_string(
+        let followers_anchor_addr: Address = HashString::encode_from_json_string(
             JsonString::from(Entry::App(
                 "followers_anchor".into(),
                 FollowingsAnchor { agent: target_agent.clone() }.into(),
             )),
             Hash::SHA2256,
         );
-        hdk::link_entries(&followed_anchor_addr, &source_agent.clone(), "followed_by", &by.unwrap_or(String::from(""))?;
-    
+        hdk::link_entries(&followers_anchor_addr, &source_agent.clone(), "followed", by)?;
         Ok(())
     }
     
     fn unfollow(target_agent: Identity, by: Option<String>) -> ZomeApiResult<()> {
-        let sender_address = hdk::AGENT_ADDRESS.clone().into();
-        hdk::remove_link(&sender_address, &target_agent, "follows", &by.unwrap_or(String::from(""))?;
+        let source_agent = hdk::AGENT_ADDRESS.clone();
+        let by = &by.unwrap_or(String::from(""));
+        let followings_anchor_addresses: Address = HashString::encode_from_json_string(
+            JsonString::from(Entry::App(
+                "followings_anchor".into(),
+                FollowingsAnchor { agent: source_agent.clone() }.into(),
+            )),
+            Hash::SHA2256,
+        );
+        hdk::remove_link(&followings_anchor_addresses, &target_agent, "follows", by)?;
+
+        let followers_anchor_addr: Address = HashString::encode_from_json_string(
+            JsonString::from(Entry::App(
+                "followers_anchor".into(),
+                FollowingsAnchor { agent: target_agent.clone() }.into(),
+            )),
+            Hash::SHA2256,
+        );
+        hdk::remove_link(&followers_anchor_addr, &source_agent.clone(), "followed", by)?;
         Ok(())
     }
     

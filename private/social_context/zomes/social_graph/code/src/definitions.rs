@@ -42,7 +42,7 @@ pub fn friendship_request_def() -> ValidatingEntryType {
 pub fn followers_anchor_def() -> ValidatingEntryType {
     entry!(
         name: "followers_anchor", 
-        description: "each agent A links to its own followers_anchor. This anchor then links to all the agents that follow agent A", 
+        description: "Anchor for foreign agents to use for registering a follow reference", 
         sharing: Sharing::Public, 
         validation_package: || {
             hdk::ValidationPackageDefinition::Entry
@@ -53,7 +53,7 @@ pub fn followers_anchor_def() -> ValidatingEntryType {
         links: [
             to!(
                 EntryType::AgentId, 
-                link_type: "followed_by", 
+                link_type: "followed", 
                 validation_package: || {
                     hdk::ValidationPackageDefinition::Entry
                 },
@@ -68,7 +68,7 @@ pub fn followers_anchor_def() -> ValidatingEntryType {
 pub fn followings_anchor_def() -> ValidatingEntryType {
     entry!(
         name: "followings_anchor", 
-        description: "each agent A links to its own followings_anchor. This anchor then links to all the agents that follow agent A", 
+        description: "Anchor for self to use for registering which agents they are following", 
         sharing: Sharing::Public, 
         validation_package: || {
             hdk::ValidationPackageDefinition::Entry
