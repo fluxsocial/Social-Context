@@ -11,7 +11,7 @@ use crate::{
 pub fn create_anchors() -> Result<(), String> {
     let agent = hdk::AGENT_ADDRESS.clone();
     //No need for link between anchor(s) -> agent as this already contained inside anchor;
-    //This means address is always derivable for agent so long as they know their agent address
+    //This means address is always derivable for agent so long as you have their agent address
     hdk::commit_entry(&Entry::App(
         "followings_anchor".into(),
         (FollowingsAnchor {
@@ -57,6 +57,7 @@ pub fn create_anchors() -> Result<(), String> {
 impl SocialGraphDao for SocialGraph {
     fn my_followers(by: Option<String>) -> ZomeApiResult<Vec<Identity>> {
         let source_agent = hdk::AGENT_ADDRESS.clone();
+        //Get anchor for followers
         let followers_anchor_addr: Address =
             FollowingsAnchor::generate_anchor_address(source_agent);
 
@@ -66,6 +67,7 @@ impl SocialGraphDao for SocialGraph {
             LinkMatch::Any
         };
 
+        //Get followed links on followers anchor w/passed tag
         match hdk::get_links(
             &followers_anchor_addr,
             LinkMatch::Exactly("followed"),
@@ -196,24 +198,53 @@ impl SocialGraphDao for SocialGraph {
     // friendships
 
     fn my_friends() -> ZomeApiResult<Vec<Identity>> {
-        Ok(vec![])
+        let source_agent = hdk::AGENT_ADDRESS.clone();
+        let source_live_anchor: Address =
+            FriendshipAnchor::generate_anchor_address(source_agent, FriendshipAnchorTypes::Live);
+        match hdk::api::get_links(
+            &source_live_anchor,
+            LinkMatch::Exactly("friendship"),
+            LinkMatch::Any,
+        ) {
+            Ok(result) => Ok(result
+                .addresses()
+                .iter()
+                .map(|address| address.clone())
+                .collect()),
+            Err(e) => Err(e),
+        }
     }
 
-    fn friends_of(_agent: Identity) -> ZomeApiResult<Vec<Identity>> {
-        Ok(vec![])
+    fn friends_of(agent: Identity) -> ZomeApiResult<Vec<Identity>> {
+        let source_live_anchor: Address =
+            FriendshipAnchor::generate_anchor_address(agent, FriendshipAnchorTypes::Live);
+        match hdk::api::get_links(
+            &source_live_anchor,
+            LinkMatch::Exactly("friendship"),
+            LinkMatch::Any,
+        ) {
+            Ok(result) => Ok(result
+                .addresses()
+                .iter()
+                .map(|address| address.clone())
+                .collect()),
+            Err(e) => Err(e),
+        }
     }
 
     fn request_friendship(target_agent: Identity) -> ZomeApiResult<()> {
         let source_agent = hdk::AGENT_ADDRESS.clone();
+        //Get address of anchor used for live friendships
         let target_live_anchor: Address = FriendshipAnchor::generate_anchor_address(
             target_agent.clone(),
             FriendshipAnchorTypes::Live,
         );
+        //Get address of anchor used for friendship "receive" requests
         let target_receive_anchor: Address = FriendshipAnchor::generate_anchor_address(
             target_agent.clone(),
             FriendshipAnchorTypes::Receive,
         );
-
+        //Get address of anchor used for friendship "receive" requests at source agent (requestee)
         let source_receive_anchor: Address = FriendshipAnchor::generate_anchor_address(
             source_agent.clone(),
             FriendshipAnchorTypes::Receive,
@@ -224,8 +255,12 @@ impl SocialGraphDao for SocialGraph {
             &target_live_anchor,
             LinkMatch::Exactly("friendship"),
             LinkMatch::Exactly(source_agent.to_string().as_ref()),
-        )?.addresses().len() > 0 {
-            return Ok(())
+        )?
+        .addresses()
+        .len()
+            > 0
+        {
+            return Ok(());
         };
 
         //If source user already has a request from target; then drop the requests and make a Live connection
@@ -233,21 +268,76 @@ impl SocialGraphDao for SocialGraph {
             &source_receive_anchor,
             LinkMatch::Exactly("friendship_request"),
             LinkMatch::Exactly(target_agent.to_string().as_ref()),
-        )?.addresses().len() > 0 {
-            let target_request_anchor = FriendshipAnchor::generate_anchor_address(target_agent.clone(), FriendshipAnchorTypes::Request);
-            //Remove request from source user
-            hdk::remove_link(&source_receive_anchor, &target_agent, "friendship_request", target_agent.to_string().as_ref())?;
-            hdk::remove_link(&target_request_anchor, &source_agent, "friendship_request", source_agent.to_string().as_ref())?;
+        )?
+        .addresses()
+        .len()
+            > 0
+        {
+            //Remove request from source user as this request to target is now treated to be accepting the friendship
+            hdk::remove_link(
+                &source_receive_anchor,
+                &target_agent,
+                "friendship_request",
+                target_agent.to_string().as_ref(),
+            )?;
+            //Remove request link from targets request anchor
+            let target_request_anchor: Address = FriendshipAnchor::generate_anchor_address(
+                target_agent.clone(),
+                FriendshipAnchorTypes::Request,
+            );
+            hdk::remove_link(
+                &target_request_anchor,
+                &source_agent,
+                "friendship_request",
+                source_agent.to_string().as_ref(),
+            )?;
             //Create friendship link on source and targets live anchor
-            let sources_live_anchor = FriendshipAnchor::generate_anchor_address(source_agent.clone(), FriendshipAnchorTypes::Live);
-            hdk::link_entries(&sources_live_anchor, &target_agent, "friendship", target_agent.to_string().as_ref())?;
-            hdk::link_entries(&target_live_anchor, &source_agent, "friendship", source_agent.to_string().as_ref())?;
+            let sources_live_anchor = FriendshipAnchor::generate_anchor_address(
+                source_agent.clone(),
+                FriendshipAnchorTypes::Live,
+            );
+            hdk::link_entries(
+                &sources_live_anchor,
+                &target_agent,
+                "friendship",
+                target_agent.to_string().as_ref(),
+            )?;
+            hdk::link_entries(
+                &target_live_anchor,
+                &source_agent,
+                "friendship",
+                source_agent.to_string().as_ref(),
+            )?;
         } else {
-            //Create request link on targets receive anchor
-            hdk::link_entries(&target_receive_anchor, &source_agent, "friendship_request", source_agent.to_string().as_ref())?;
-            let source_request_anchor = FriendshipAnchor::generate_anchor_address(source_agent.clone(), FriendshipAnchorTypes::Request);
-            //Create request link on sources request anchor
-            hdk::link_entries(&source_request_anchor, &target_agent, "friendship_request", target_agent.to_string().as_ref())?;
+            let source_request_anchor = FriendshipAnchor::generate_anchor_address(
+                source_agent.clone(),
+                FriendshipAnchorTypes::Request,
+            );
+            //Check that source user has not already made a friendship request to target
+            if hdk::get_links(
+                &source_request_anchor,
+                LinkMatch::Exactly("friendship_request"),
+                LinkMatch::Exactly(target_agent.to_string().as_ref()),
+            )?
+            .addresses()
+            .len()
+                == 0
+            {
+                //Create request link on targets receive anchor
+                hdk::link_entries(
+                    &target_receive_anchor,
+                    &source_agent,
+                    "friendship_request",
+                    source_agent.to_string().as_ref(),
+                )?;
+                //Create request link on sources request anchor allows source user to see that they already have a request to this user
+                hdk::link_entries(
+                    &source_request_anchor,
+                    &target_agent,
+                    "friendship_request",
+                    target_agent.to_string().as_ref(),
+                )?;
+            };
         };
 
         Ok(())
@@ -256,20 +346,76 @@ impl SocialGraphDao for SocialGraph {
     fn decline_friendship(target_agent: Identity) -> ZomeApiResult<()> {
         //Check for friendship request in receive anchor and drop
         let source_agent = hdk::AGENT_ADDRESS.clone();
-        let source_receive_anchor: Address = FriendshipAnchor::generate_anchor_address(source_agent, FriendshipAnchorTypes::Receive);
+        let source_receive_anchor: Address =
+            FriendshipAnchor::generate_anchor_address(source_agent.clone(), FriendshipAnchorTypes::Receive);
+        let target_request_anchor: Address = FriendshipAnchor::generate_anchor_address(
+            target_agent.clone(),
+            FriendshipAnchorTypes::Request,
+        );
+
+        //Check which direction of friendship is being declined
         if hdk::get_links(
             &source_receive_anchor,
             LinkMatch::Exactly("friendship_request"),
             LinkMatch::Exactly(target_agent.to_string().as_ref()),
-        )?.addresses().len() > 0 {
-            hdk::remove_link(&source_receive_anchor, &target_agent, "friendship_request", target_agent.to_string().as_ref())?;
+        )?
+        .addresses()
+        .len()
+            > 0
+        {
+            //First case incoming request is being declined link should be deleted on sources receive and targets requests anchor(s)
+            hdk::remove_link(
+                &source_receive_anchor,
+                &target_agent,
+                "friendship_request",
+                target_agent.to_string().as_ref(),
+            )?;
+            hdk::remove_link(
+                &target_request_anchor,
+                &source_agent,
+                "friendship_request",
+                source_agent.to_string().as_ref(),
+            )?;
+        } else {
+            //In second case the request has been made by source user and request should be deleted from source users request anchor and target users recieve anchor
+            let source_request_anchor: Address = FriendshipAnchor::generate_anchor_address(
+                source_agent.clone(),
+                FriendshipAnchorTypes::Request,
+            );
+            if hdk::get_links(
+                &source_request_anchor,
+                LinkMatch::Exactly("friendship_request"),
+                LinkMatch::Exactly(target_agent.to_string().as_ref()),
+            )?
+            .addresses()
+            .len()
+                > 0
+            {
+                let target_receive_anchor: Address = FriendshipAnchor::generate_anchor_address(
+                    target_agent.clone(),
+                    FriendshipAnchorTypes::Receive,
+                );
+                hdk::remove_link(
+                    &source_request_anchor,
+                    &target_agent,
+                    "friendship_request",
+                    target_agent.to_string().as_ref(),
+                )?;
+                hdk::remove_link(
+                    &target_receive_anchor,
+                    &source_agent,
+                    "friendship_request",
+                    source_agent.to_string().as_ref(),
+                )?;
+            };
         };
         Ok(())
     }
 
     fn incoming_friendship_requests() -> ZomeApiResult<Vec<Identity>> {
         let source_agent = hdk::AGENT_ADDRESS.clone();
-        let source_receive_anchor: Address = FriendshipAnchor::generate_anchor_address(source_agent, FriendshipAnchorTypes::Receive);
+        let source_receive_anchor: Address =
+            FriendshipAnchor::generate_anchor_address(source_agent, FriendshipAnchorTypes::Receive);
         match hdk::api::get_links(
             &source_receive_anchor,
             LinkMatch::Exactly("friendship_request"),
@@ -286,7 +432,8 @@ impl SocialGraphDao for SocialGraph {
 
     fn outgoing_friendship_requests() -> ZomeApiResult<Vec<Identity>> {
         let source_agent = hdk::AGENT_ADDRESS.clone();
-        let source_request_anchor: Address = FriendshipAnchor::generate_anchor_address(source_agent, FriendshipAnchorTypes::Request);
+        let source_request_anchor: Address =
+            FriendshipAnchor::generate_anchor_address(source_agent, FriendshipAnchorTypes::Request);
         match hdk::api::get_links(
             &source_request_anchor,
             LinkMatch::Exactly("friendship_request"),
@@ -301,7 +448,42 @@ impl SocialGraphDao for SocialGraph {
         }
     }
 
-    fn drop_friendship(_target_agent: Identity) -> ZomeApiResult<()> {
+    fn drop_friendship(target_agent: Identity) -> ZomeApiResult<()> {
+        let source_agent = hdk::AGENT_ADDRESS.clone();
+        //Create friendship link on source and targets live anchor
+        let sources_live_anchor = FriendshipAnchor::generate_anchor_address(
+            source_agent.clone(),
+            FriendshipAnchorTypes::Live,
+        );
+
+        //Get links on sources_live_anchor & check if live friendship exists to make delete
+        if hdk::get_links(
+            &sources_live_anchor,
+            LinkMatch::Exactly("friendship"),
+            LinkMatch::Exactly(target_agent.to_string().as_ref()),
+        )?
+        .addresses()
+        .len()
+            > 0
+        {
+            //Get address of anchor used for live friendships
+            let target_live_anchor: Address = FriendshipAnchor::generate_anchor_address(
+                target_agent.clone(),
+                FriendshipAnchorTypes::Live,
+            );
+            hdk::remove_link(
+                &sources_live_anchor,
+                &target_agent,
+                "friendship",
+                target_agent.to_string().as_ref(),
+            )?;
+            hdk::remove_link(
+                &target_live_anchor,
+                &source_agent,
+                "friendship",
+                source_agent.to_string().as_ref(),
+            )?;
+        }
         Ok(())
     }
 }
