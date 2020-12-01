@@ -1,0 +1,14 @@
+[workspace]
+members = [
+  "zomes/social_context",
+]
+
+[profile.dev]
+opt-level = "z"
+
+[profile.release]
+opt-level = "z"
+
+[patch.crates-io]
+hdk3 = { path = "../holochain/crates/hdk" }
+holo_hash = { path = "../holochain/crates/holo_hash" }

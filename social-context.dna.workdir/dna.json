@@ -1,0 +1,10 @@
+{
+  "name": "Social-Context",
+  "uuid": "",
+  "properties": null,
+  "zomes": {
+    "social_context": {
+      "wasm_path": "../target/wasm32-unknown-unknown/release/social_context.wasm"
+    }
+  }
+}
