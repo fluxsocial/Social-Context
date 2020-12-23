@@ -54,6 +54,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4785bdd1c96b2a846b2bd7cc02e86b6b3dbf14e7e53446c4f54c92a361040822"
 
 [[package]]
+name = "chunked_social_context"
+version = "0.0.1"
+dependencies = [
+ "derive_more",
+ "hdk3",
+ "holo_hash",
+ "lazy_static",
+ "meta-traits",
+ "serde",
+]
+
+[[package]]
 name = "cloudabi"
 version = "0.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
