@@ -44,6 +44,8 @@ const sample_dna_address = Buffer.from([132, 45, 36, 113, 136, 200, 19, 133, 133
 const sample_entry_address = Buffer.from([132, 41, 36, 152, 75, 230, 90, 132, 255, 226, 123, 128, 91, 101, 140, 101, 81, 59, 25, 154, 90, 104, 24, 14, 40, 255, 86, 43, 199, 71, 78, 232, 9, 217, 198, 124, 106, 153, 126])
 const sample_entry_address2 = Buffer.from([132, 41, 36, 218, 236, 8, 48, 108, 119, 131, 20, 1, 217, 228, 69, 187, 188, 88, 82, 180, 102, 60, 47, 145, 78, 105, 200, 4, 139, 0, 114, 160, 130, 164, 188, 53, 247, 97, 186])
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(() => resolve(), ms));
+
 orchestrator.registerScenario("post and read communication by dna & agent", async (s, t) => {
   // Declare two players using the previously specified config, nicknaming them "alice" and "bob"
   // note that the first argument to players is just an array conductor configs that that will
@@ -59,16 +61,11 @@ orchestrator.registerScenario("post and read communication by dna & agent", asyn
     [bob_sc_happ],
   ] = await bob.installAgentsHapps(installation)
 
-  //Test simple zome call to ensure things are setup correctly
-  const get_members = await alice_sc_happ.cells[0].call("social_context", "members", {count: 10, page: 0})
-  console.log(get_members);
-  t.deepEqual(get_members.length, 0)
-
   //Create communication
   await alice_sc_happ.cells[0].call("social_context", "post", {dna: sample_dna_address, entry_address: sample_entry_address})
 
   //Create second expression ref on same DNA
-   await alice_sc_happ.cells[0].call("social_context", "post", {dna: sample_dna_address, entry_address: sample_entry_address2})
+  await alice_sc_happ.cells[0].call("social_context", "post", {dna: sample_dna_address, entry_address: sample_entry_address2})
 
   //Read communications by DNA
   const get_communications = await bob_sc_happ.cells[0].call("social_context", "read_communications", {by_dna: sample_dna_address, by_agent: null, count: 10, page: 0})
@@ -81,8 +78,6 @@ orchestrator.registerScenario("post and read communication by dna & agent", asyn
 
 orchestrator.registerScenario("post and read communication methods", async (s, t) => {
   const [alice, bob] = await s.players([conductorConfig, conductorConfig])
-  await alice.startup()
-  await bob.startup()
 
   const [
     [alice_sc_happ],
@@ -98,22 +93,28 @@ orchestrator.registerScenario("post and read communication methods", async (s, t
   t.deepEqual(get_methods.length, 1)
 })
 
-// We cant implement this test right now as we have no hooks on the DNA that allows for adding of users to some anchor on init
-// orchestrator.registerScenario("read members", async (s, t) => {
-//   const [alice, bob] = await s.players([conductorConfig, conductorConfig])
-//   await alice.startup()
-//   await bob.startup()
+orchestrator.registerScenario("read members", async (s, t) => {
+  const [alice, bob] = await s.players([conductorConfig, conductorConfig])
 
-//   const [
-//     [alice_sc_happ],
-//   ] = await alice.installAgentsHapps(installation)
-//   const [
-//     [bob_sc_happ],
-//   ] = await bob.installAgentsHapps(installation)
+  const [
+    [alice_sc_happ],
+  ] = await alice.installAgentsHapps(installation)
+  const [
+    [bob_sc_happ],
+  ] = await bob.installAgentsHapps(installation)
 
-//   const get_members = await alice_sc_happ.cells[0].call("social_context", "members", {count: 10, page: 0})
-//   t.deepEqual(get_members.length, 2)
-// })
+  //Do something from bob and alice. This seems to ensure that both agents have their init fn run before calling members function
+  await alice_sc_happ.cells[0].call("social_context", "post", {dna: sample_dna_address, entry_address: sample_entry_address})
+  await bob_sc_happ.cells[0].call("social_context", "post", {dna: sample_dna_address, entry_address: sample_entry_address2})
+
+  sleep(10000);
+
+  const get_members_bob2 = await bob_sc_happ.cells[0].call("social_context", "members", {count: 0, page: 0})
+  t.deepEqual(get_members_bob2.length, 2)
+
+  const get_members2 = await alice_sc_happ.cells[0].call("social_context", "members", {count: 0, page: 0})
+  t.deepEqual(get_members2.length, 2)
+})
 
 // Run all registered scenarios as a final step, and gather the report,
 // if you set up a reporter

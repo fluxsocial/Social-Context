@@ -43,7 +43,7 @@ pub struct DnaAddressReference {
 
 #[hdk_entry(id = "user_ref", visibility = "public")]
 #[serde(rename_all = "camelCase")]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct UserReference {
     pub address: AgentPubKey,
 }
