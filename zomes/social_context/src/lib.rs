@@ -17,9 +17,6 @@ use out::*;
 /// Right now this social context does not employ any kind of validation for incoming references or allow any permissioned posting
 /// of either entry ref's, communication methods or agents allowed to join.
 ///
-/// This is serving as a POC for now with the hopes to add above functionality as when it makes sense to and hdk3 support & design patterns
-/// materialze further.
-///
 /// TODO:
 /// Write and run some tests
 /// Add validation logic for posting references; at the very least here we would want to check that target reference is a real thing
@@ -48,7 +45,7 @@ pub struct DnaAddressReference {
 #[serde(rename_all = "camelCase")]
 #[derive(Clone)]
 pub struct UserReference {
-    pub address: agent_info::AgentInfo,
+    pub address: AgentPubKey,
 }
 
 #[hdk_extern]
@@ -57,6 +54,7 @@ fn entry_defs(_: ()) -> ExternResult<EntryDefsCallbackResult> {
         DnaAddressReference::entry_def(),
         EntryRefPublic::entry_def(),
         EntryRefPrivate::entry_def(),
+        UserReference::entry_def(),
         Anchor::entry_def(),
     ]
     .into())
@@ -65,19 +63,33 @@ fn entry_defs(_: ()) -> ExternResult<EntryDefsCallbackResult> {
 /// Extern zome functions
 
 #[hdk_extern]
+fn init(_: ()) -> ExternResult<InitCallbackResult> {
+    let user_anchor = Anchor {
+        anchor_type: String::from("global_user_anchor"),
+        anchor_text: None,
+    };
+    let anchor_hash = hash_entry(&user_anchor)?;
+    create_entry(&user_anchor)?;
+
+    //Here we actually dont need to store the address since it is already present with the entry
+    //but for now this is fine
+    let user_reference = UserReference {
+        address: agent_info()?.agent_latest_pubkey,
+    };
+    let user_reference_hash = hash_entry(&user_reference)?;
+    create_entry(&user_reference)?;
+
+    create_link(anchor_hash, user_reference_hash, LinkTag::new("member"))?;
+    Ok(InitCallbackResult::Pass)
+}
+
+#[hdk_extern]
 pub fn post(expression_ref: GlobalEntryRef) -> ExternResult<()> {
-    //let expression_ref: GlobalEntryRef = expression_ref.try_into()?;
     SocialContextDNA::post(expression_ref)
 }
 
 #[hdk_extern]
 pub fn register_communication_method(dna_address: DnaAddress) -> ExternResult<()> {
-    //Right now we need this because hdk_extern is failing in parsing incoming string to DnaHash even though string is confirmed to be valid
-    // let dna_address: DnaHash = dna_address.dna_address.try_into().map_err(|_err| {
-    //     HdkError::Wasm(WasmError::Zome(String::from(
-    //         "Incoming dna_address not valid dna hash",
-    //     )))
-    // })?;
     SocialContextDNA::register_communication_method(dna_address.dna_address)
 }
 
@@ -121,9 +133,8 @@ pub fn members(args: PaginationArguments) -> ExternResult<IdentityListOutput> {
 pub enum IndexStrategies {
     /// Local simple Anchor based indexing
     LocalAnchor,
-    /// Local bucket based indexing
-    /// Involves spreading links across many fixed or dynamic entries to avoid hotspots
-    LocalBuckets,
+    /// Local chunk based indexing/anchoring
+    LocalChunks,
     /// Uses some external persistence mediated through node2node communication with agents at given addresses
     RemoteIndex {
         target_index_agents: Vec<agent_info::AgentInfo>,

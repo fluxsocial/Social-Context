@@ -98,6 +98,7 @@ orchestrator.registerScenario("post and read communication methods", async (s, t
   t.deepEqual(get_methods.length, 1)
 })
 
+// We cant implement this test right now as we have no hooks on the DNA that allows for adding of users to some anchor on init
 // orchestrator.registerScenario("read members", async (s, t) => {
 //   const [alice, bob] = await s.players([conductorConfig, conductorConfig])
 //   await alice.startup()

@@ -4,7 +4,7 @@ use holo_hash::DnaHash;
 
 use meta_traits::{GlobalEntryRef, Identity, SocialContextDao};
 
-use crate::{DnaAddressReference, EntryRefPublic, SocialContextDNA};
+use crate::{DnaAddressReference, EntryRefPublic, SocialContextDNA, UserReference};
 
 impl SocialContextDao for SocialContextDNA {
     /// Persist to social context that you have made an entry at expression_ref.dna_address/@expression_ref.entry_address
@@ -15,7 +15,10 @@ impl SocialContextDao for SocialContextDNA {
         };
         let dna_ref_entry_hash = hash_entry(&dna_ref)?;
         let dna_reference = create_entry(&dna_ref)?;
-        debug!(format!("Created dna ref with header: {:?} & entry: {:?}\n\n", dna_reference, dna_ref_entry_hash));
+        debug!(format!(
+            "Created dna ref with header: {:?} & entry: {:?}\n\n",
+            dna_reference, dna_ref_entry_hash
+        ));
 
         let entry_ref = EntryRefPublic(GlobalEntryRef {
             dna: expression_ref.dna,
@@ -107,15 +110,16 @@ impl SocialContextDao for SocialContextDNA {
             ))));
         };
 
-        debug!("got links: {:#?}", ref_links);
         let refs = ref_links
             .into_inner()
             .into_iter()
             .map(|val| {
-                let element =
-                    get(val.target.clone(), GetOptions)?.ok_or(HdkError::Wasm(WasmError::Zome(
-                        format!("Could not get entry for link with target: {}", val.target),
-                    )))?;
+                let element = get(val.target.clone(), GetOptions::default())?.ok_or(
+                    HdkError::Wasm(WasmError::Zome(format!(
+                        "Could not get entry for link with target: {}",
+                        val.target
+                    ))),
+                )?;
                 let entry_ref = try_from_entry::<EntryRefPublic>(
                     element
                         .entry()
@@ -154,10 +158,12 @@ impl SocialContextDao for SocialContextDNA {
             .into_inner()
             .into_iter()
             .map(|val| {
-                let element =
-                    get(val.target.clone(), GetOptions)?.ok_or(HdkError::Wasm(WasmError::Zome(
-                        format!("Could not get entry for link with target: {}", val.target),
-                    )))?;
+                let element = get(val.target.clone(), GetOptions::default())?.ok_or(
+                    HdkError::Wasm(WasmError::Zome(format!(
+                        "Could not get entry for link with target: {}",
+                        val.target
+                    ))),
+                )?;
                 Ok(try_from_entry::<DnaAddressReference>(
                     element
                         .entry()
@@ -177,15 +183,36 @@ impl SocialContextDao for SocialContextDNA {
     /// Get agents who are a part of this social context
     /// optional to not force every implementation to create a global list of members - might be ok for small DHTs
     fn members(_count: usize, _page: usize) -> ExternResult<Option<Vec<Identity>>> {
-        // let dna_anchor = Anchor {
-        //     anchor_type: String::from("dna"),
-        //     anchor_text: None,
-        // };
-        // let dna_anchor_entry_hash = hash_entry(&dna_anchor)?;
-        // let dna_anchor_reference = create_entry(&dna_anchor)?;
-        // debug!(format!("created dna anchor with {:#?} & {:?} + {:?}\n\n\n\n\n\n\n\n", dna_anchor_entry_hash, dna_anchor_reference.get_raw_39(), zome_info()?.dna_hash.get_raw_39()));
-        //Right now it seems that the DNA "hooks" are not available in the HDK so we have no way of adding users to some index upon joining of network
-        Ok(Some(vec![]))
+        let user_anchor = Anchor {
+            anchor_type: String::from("global_user_anchor"),
+            anchor_text: None,
+        };
+        let anchor_hash = hash_entry(&user_anchor)?;
+        Ok(Some(
+            get_links(anchor_hash, Some(LinkTag::new("member")))?
+                .into_inner()
+                .into_iter()
+                .map(|link| {
+                    let user_entry = get(link.target.clone(), GetOptions::default())?.ok_or(
+                        HdkError::Wasm(WasmError::Zome(format!(
+                            "Could not get entry for link with target: {}",
+                            link.target
+                        ))),
+                    )?;
+                    Ok(try_from_entry::<UserReference>(
+                        user_entry
+                            .entry()
+                            .as_option()
+                            .ok_or(HdkError::Wasm(WasmError::Zome(format!(
+                                "Could not get entry for link with target: {}",
+                                link.target
+                            ))))?
+                            .to_owned(),
+                    )?
+                    .address)
+                })
+                .collect::<ExternResult<Vec<AgentPubKey>>>()?,
+        ))
     }
 }
 
