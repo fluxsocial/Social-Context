@@ -9,12 +9,16 @@ use crate::{EntryRefPublic, SocialContextDNA, UserReference, SOFT_CHUNK_LIMIT};
 impl SocialContextDNA {
     /// Persist to social context that you have made an entry at expression_ref.dna_address/@expression_ref.entry_address
     /// which is most likely contextual to the collective of host social context
+    ///
+    /// For this fn we are allowing users to submit chunk they would like to use; but ideally we will still force max number of links on given chunk at validation
+    /// This is a test to see if we having validation reject the link & then have the client re-issue the req's somehow works better
+    /// than the zome deciding the chunk which the expression should be entered onto
     pub fn post(expression_ref: GlobalEntryRefChunked) -> ExternResult<()> {
         //Get dna path with chunk
         let component = Component::from(expression_ref.dna.get_raw_36().to_owned());
         let dna_path = Path::from(vec![component]);
         let dna_path = add_chunk_path(dna_path, expression_ref.chunk);
-
+        debug!("Creating exp with: {:?}", dna_path);
         // Ensure the path exists
         dna_path.ensure()?;
 
@@ -51,19 +55,22 @@ impl SocialContextDNA {
     /// Register that there is some dna at dna_address that you are communicating in.
     /// Others in collective can use this to join you in new DNA's
     pub fn register_communication_method(dna_address: DnaHash) -> ExternResult<()> {
+        debug!("creating communication method");
         //Create root dna path "anchor"
         let root_dna_path = Path::from("dna_anchor");
         root_dna_path.ensure()?;
 
         //Look for a chunk which does not have many links on it
-        let chunk = get_free_chunk(
-            &root_dna_path,
-            LinkTag::from("communication_method".as_bytes().to_owned()),
-        )?;
+        let chunk = get_free_chunk(&root_dna_path, LinkTag::new("communication_method"))?;
+        debug!(
+            "Found free chunk at: {:?} for register communication method",
+            chunk
+        );
 
         //Add this chunk to the path, ensure and then get the hash
         let root_dna_path = add_chunk_path(root_dna_path, chunk);
         root_dna_path.ensure()?;
+        debug!("Adding communication method at path: {:?}", root_dna_path);
         let root_dna_path = hash_entry(&root_dna_path)?;
 
         //Get dna path
@@ -101,14 +108,14 @@ impl SocialContextDNA {
         };
 
         let ref_links = if let Some(dna_address) = by_dna {
-            let component = Component::from(dna_address.get_raw_39().to_owned());
+            let component = Component::from(dna_address.get_raw_36().to_owned());
             let dna_path = Path::from(vec![component]);
             let mut links: Vec<Link> = Vec::new();
             let mut counter = from_chunk;
             loop {
                 // Add the chunk component
                 let chunked_dna_path = add_chunk_path(dna_path.clone(), counter);
-
+                debug!("Getting with: {:?}", chunked_dna_path);
                 // Ensure the path exists
                 chunked_dna_path.ensure()?;
 
@@ -244,7 +251,7 @@ impl SocialContextDNA {
             out.append(
                 &mut get_links(
                     chunked_user_anchor_path.hash()?,
-                    Some(LinkTag::new("communication")),
+                    Some(LinkTag::new("member")),
                 )?
                 .into_inner()
                 .into_iter()
@@ -304,17 +311,17 @@ pub fn get_free_chunk(path: &Path, tag: LinkTag) -> ExternResult<u32> {
     let mut current_chunk = 0;
     let chunked_path = add_chunk_path(path.clone(), current_chunk);
     let mut chunked_path_hashed = hash_entry(&chunked_path)?;
-
     let chunk_val = loop {
-        if get_links(chunked_path_hashed.clone(), Some(tag.clone()))?
+        let links_len = get_links(chunked_path_hashed.clone(), Some(tag.clone()))?
             .into_inner()
-            .len()
-            < *SOFT_CHUNK_LIMIT
-        {
+            .len();
+        debug!("Found {:?}", links_len);
+        if links_len < *SOFT_CHUNK_LIMIT {
             break current_chunk;
         } else {
             current_chunk = current_chunk + 1;
             let chunked_path = add_chunk_path(path.clone(), current_chunk.clone());
+            debug!("Checking: {:?}", chunked_path);
             chunked_path_hashed = hash_entry(&chunked_path)?;
         };
     };

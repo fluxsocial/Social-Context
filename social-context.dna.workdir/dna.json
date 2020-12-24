@@ -5,6 +5,9 @@
   "zomes": {
     "social_context": {
       "wasm_path": "../target/wasm32-unknown-unknown/release/social_context.wasm"
+    },
+    "social_context_chunked": {
+      "wasm_path": "../target/wasm32-unknown-unknown/release/social_context_chunked.wasm"
     }
   }
 }

@@ -142,8 +142,8 @@ lazy_static! {
     //Zome logic will evaluate on soft limit as to try and reduce cases where lawful actors
     //commit links on some chunk which they read to be free but actually by validation time is full due to async operations
     //or (consistency concerns?)
-    pub static ref SOFT_CHUNK_LIMIT: usize = 50;
-    pub static ref HARD_CHUNK_LIMIT: usize = 100;
+    pub static ref SOFT_CHUNK_LIMIT: usize = 30;
+    pub static ref HARD_CHUNK_LIMIT: usize = 50;
 }
 
 pub struct SocialContextDNA();

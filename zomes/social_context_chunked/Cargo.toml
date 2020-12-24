@@ -1,12 +1,12 @@
 [package]
 authors = ["josh@junto.foundation"]
 edition = "2018"
-name = "chunked_social_context"
+name = "social_context_chunked"
 version = "0.0.1"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
-name = "chunked_social_context"
+name = "social_context_chunked"
 
 [dependencies]
 derive_more = "0"
