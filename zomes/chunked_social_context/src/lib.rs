@@ -41,7 +41,7 @@ fn entry_defs(_: ()) -> ExternResult<EntryDefsCallbackResult> {
         EntryRefPublic::entry_def(),
         EntryRefPrivate::entry_def(),
         UserReference::entry_def(),
-        Anchor::entry_def()
+        Anchor::entry_def(),
     ]
     .into())
 }
@@ -50,12 +50,16 @@ fn entry_defs(_: ()) -> ExternResult<EntryDefsCallbackResult> {
 
 #[hdk_extern]
 fn init(_: ()) -> ExternResult<InitCallbackResult> {
-    let user_anchor = Anchor {
+    let user_anchor_path = Path::from(&Anchor {
         anchor_type: String::from("global_user_anchor"),
         anchor_text: None,
-    };
-    let anchor_hash = hash_entry(&user_anchor)?;
-    create_entry(&user_anchor)?;
+    });
+    //Get a chunk to use on this user anchor
+    let chunk = methods::get_free_chunk(&user_anchor_path, LinkTag::new("member"))?;
+
+    let user_anchor_path = methods::add_chunk_path(user_anchor_path, chunk);
+    let anchor_hash = hash_entry(&user_anchor_path)?;
+    user_anchor_path.ensure()?;
 
     //Here we actually dont need to store the address since it is already present with the entry
     //but for now this is fine
@@ -91,22 +95,24 @@ pub fn read_communications(args: ReadCommunicationArguments) -> ExternResult<Ent
     Ok(EntryRefListOut(SocialContextDNA::read_communications(
         args.by_dna,
         args.by_agent,
-        args.from_chunk as u32,
-        args.to_chunk as u32,
+        args.from_chunk,
+        args.to_chunk,
     )?))
 }
 
 #[hdk_extern]
 pub fn get_communication_methods(args: PaginationArguments) -> ExternResult<DnaListOutput> {
     Ok(DnaListOutput(SocialContextDNA::get_communication_methods(
-        args.from_chunk as u32, args.to_chunk as u32,
+        args.from_chunk,
+        args.to_chunk,
     )?))
 }
 
 #[hdk_extern]
 pub fn members(args: PaginationArguments) -> ExternResult<IdentityListOutput> {
     Ok(IdentityListOutput(SocialContextDNA::members(
-        args.from_chunk, args.to_chunk,
+        args.from_chunk,
+        args.to_chunk,
     )?))
 }
 
@@ -135,7 +141,7 @@ lazy_static! {
     //Limits for the max number of links that are allowed on a given chunk
     //Zome logic will evaluate on soft limit as to try and reduce cases where lawful actors
     //commit links on some chunk which they read to be free but actually by validation time is full due to async operations
-    //or (consistency concerns?) 
+    //or (consistency concerns?)
     pub static ref SOFT_CHUNK_LIMIT: usize = 50;
     pub static ref HARD_CHUNK_LIMIT: usize = 100;
 }

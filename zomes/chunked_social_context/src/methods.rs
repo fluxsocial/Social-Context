@@ -2,7 +2,7 @@ use hdk3::hash_path::{anchor::Anchor, path::Component};
 use hdk3::prelude::*;
 use holo_hash::DnaHash;
 
-use meta_traits::{GlobalEntryRefChunked, Identity, GlobalEntryRef};
+use meta_traits::{GlobalEntryRef, GlobalEntryRefChunked, Identity};
 
 use crate::{EntryRefPublic, SocialContextDNA, UserReference, SOFT_CHUNK_LIMIT};
 
@@ -51,22 +51,26 @@ impl SocialContextDNA {
     /// Register that there is some dna at dna_address that you are communicating in.
     /// Others in collective can use this to join you in new DNA's
     pub fn register_communication_method(dna_address: DnaHash) -> ExternResult<()> {
-        //Get dna path
-        let dna_path = Path::from(dna_address.to_string());
-        dna_path.ensure()?;
-        let dna_ref_path_hash = hash_entry(&dna_path)?;
-
         //Create root dna path "anchor"
         let root_dna_path = Path::from("dna_anchor");
         root_dna_path.ensure()?;
 
         //Look for a chunk which does not have many links on it
-        let chunk = get_free_chunk(&root_dna_path, LinkTag::from("communication_method".as_bytes().to_owned()))?;
+        let chunk = get_free_chunk(
+            &root_dna_path,
+            LinkTag::from("communication_method".as_bytes().to_owned()),
+        )?;
 
+        //Add this chunk to the path, ensure and then get the hash
         let root_dna_path = add_chunk_path(root_dna_path, chunk);
         root_dna_path.ensure()?;
-
         let root_dna_path = hash_entry(&root_dna_path)?;
+
+        //Get dna path
+        let component = Component::from(dna_address.get_raw_36().to_owned());
+        let dna_path = Path::from(vec![component]);
+        dna_path.ensure()?;
+        let dna_ref_path_hash = hash_entry(&dna_path)?;
 
         create_link(
             root_dna_path,
@@ -83,7 +87,7 @@ impl SocialContextDNA {
         true
     }
 
-    /// Get GlobalEntryRef for collective; queryable by dna or agent or all. DHT hotspotting @Nico?
+    /// Get GlobalEntryRef for collective; queryable by dna or agent or all
     pub fn read_communications(
         by_dna: Option<DnaHash>,
         by_agent: Option<Identity>,
@@ -100,24 +104,27 @@ impl SocialContextDNA {
             let component = Component::from(dna_address.get_raw_39().to_owned());
             let dna_path = Path::from(vec![component]);
             let mut links: Vec<Link> = Vec::new();
-            let mut counter = from_chunk as u32;
-            loop {        
+            let mut counter = from_chunk;
+            loop {
                 // Add the chunk component
                 let chunked_dna_path = add_chunk_path(dna_path.clone(), counter);
-        
+
                 // Ensure the path exists
                 chunked_dna_path.ensure()?;
-        
-                // Get the actual hash we are going to pull the messages from
-                let channel_entry_hash = chunked_dna_path.hash()?;
-        
-                // Get the message links on this channel
-                links.append(&mut get_links(channel_entry_hash.clone(), Some(LinkTag::new("communication")))?.into_inner());
+
+                // Get the communication links on this dna & chunk
+                links.append(
+                    &mut get_links(
+                        chunked_dna_path.hash()?,
+                        Some(LinkTag::new("communication")),
+                    )?
+                    .into_inner(),
+                );
                 if counter == to_chunk {
                     break;
                 }
                 counter += 1
-            };
+            }
             links
         } else if let Some(agent_ident) = by_agent {
             let agent_hash: AnyDhtHash = agent_ident.into();
@@ -165,25 +172,31 @@ impl SocialContextDNA {
         let root_dna_path = Path::from("dna_anchor");
 
         let mut communication_links: Vec<Link> = Vec::new();
-        let mut counter = from_chunk as u32;
+        let mut counter = from_chunk;
         loop {
             // Add the chunk component
             let root_dna_path = add_chunk_path(root_dna_path.clone(), counter);
-    
+
             // Ensure the path exists
             root_dna_path.ensure()?;
-    
+
             // Get the actual hash we are going to pull the messages from
             let channel_entry_hash = root_dna_path.hash()?;
-    
+
             // Get the message communication_links on this channel
-            communication_links.append(&mut get_links(channel_entry_hash.clone(), Some(LinkTag::new("communication_method")))?.into_inner());
+            communication_links.append(
+                &mut get_links(
+                    channel_entry_hash.clone(),
+                    Some(LinkTag::new("communication_method")),
+                )?
+                .into_inner(),
+            );
             if counter == to_chunk {
                 break;
             }
             counter += 1
-        };
-        
+        }
+
         let communication_links = communication_links
             .into_iter()
             .map(|val| {
@@ -203,7 +216,8 @@ impl SocialContextDNA {
                             val.target
                         ))))?
                         .to_owned(),
-                )?.into(); 
+                )?
+                .into();
                 Ok(DnaHash::from_raw_36(component.remove(0).into()))
             })
             .collect::<ExternResult<Vec<DnaHash>>>()?;
@@ -212,14 +226,26 @@ impl SocialContextDNA {
 
     /// Get agents who are a part of this social context
     /// optional to not force every implementation to create a global list of members - might be ok for small DHTs
-    pub fn members(_count: usize, _page: usize) -> ExternResult<Option<Vec<Identity>>> {
-        let user_anchor = Anchor {
+    pub fn members(from_chunk: u32, to_chunk: u32) -> ExternResult<Option<Vec<Identity>>> {
+        let user_anchor_path = Path::from(&Anchor {
             anchor_type: String::from("global_user_anchor"),
             anchor_text: None,
-        };
-        let anchor_hash = hash_entry(&user_anchor)?;
-        Ok(Some(
-            get_links(anchor_hash, Some(LinkTag::new("member")))?
+        });
+        let mut out: Vec<AgentPubKey> = Vec::new();
+        let mut counter = from_chunk;
+        loop {
+            // Add the chunk component
+            let chunked_user_anchor_path = add_chunk_path(user_anchor_path.clone(), counter);
+
+            // Ensure the path exists
+            chunked_user_anchor_path.ensure()?;
+
+            // Get the message links on this channel
+            out.append(
+                &mut get_links(
+                    chunked_user_anchor_path.hash()?,
+                    Some(LinkTag::new("communication")),
+                )?
                 .into_inner()
                 .into_iter()
                 .map(|link| {
@@ -242,7 +268,13 @@ impl SocialContextDNA {
                     .address)
                 })
                 .collect::<ExternResult<Vec<AgentPubKey>>>()?,
-        ))
+            );
+            if counter == to_chunk {
+                break;
+            }
+            counter += 1
+        }
+        Ok(Some(out))
     }
 }
 
@@ -261,26 +293,29 @@ pub fn try_from_entry<T: TryFrom<SerializedBytes>>(entry: Entry) -> ExternResult
 }
 
 /// Add the chunk index from the Date type to this path
-fn add_chunk_path(path: Path, chunk: u32) -> Path {
+pub fn add_chunk_path(path: Path, chunk: u32) -> Path {
     let mut components: Vec<_> = path.into();
 
     components.push(format!("{}", chunk).into());
     components.into()
 }
 
-//TODO: this can be cleaned up
-fn get_free_chunk(path: &Path, tag: LinkTag) -> ExternResult<u32> {
+pub fn get_free_chunk(path: &Path, tag: LinkTag) -> ExternResult<u32> {
     let mut current_chunk = 0;
     let chunked_path = add_chunk_path(path.clone(), current_chunk);
-    let mut current_path = hash_entry(&chunked_path)?;
+    let mut chunked_path_hashed = hash_entry(&chunked_path)?;
 
     let chunk_val = loop {
-        if get_links(current_path.clone(), Some(tag.clone()))?.into_inner().len() < *SOFT_CHUNK_LIMIT {
+        if get_links(chunked_path_hashed.clone(), Some(tag.clone()))?
+            .into_inner()
+            .len()
+            < *SOFT_CHUNK_LIMIT
+        {
             break current_chunk;
         } else {
             current_chunk = current_chunk + 1;
             let chunked_path = add_chunk_path(path.clone(), current_chunk.clone());
-            current_path = hash_entry(&chunked_path)?;
+            chunked_path_hashed = hash_entry(&chunked_path)?;
         };
     };
     Ok(chunk_val)
