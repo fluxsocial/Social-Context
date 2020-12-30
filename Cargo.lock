@@ -498,6 +498,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "social_context_link_store"
+version = "0.0.1"
+dependencies = [
+ "derive_more",
+ "hdk3",
+ "holo_hash",
+ "lazy_static",
+ "meta-traits",
+ "serde",
+]
+
+[[package]]
 name = "strum"
 version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

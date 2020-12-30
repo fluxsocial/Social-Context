@@ -1,7 +1,8 @@
 [workspace]
 members = [
   "zomes/social_context",
-  "zomes/social_context_chunked"
+  "zomes/social_context_chunked",
+  "zomes/social_context_link_store"
 ]
 
 [profile.dev]

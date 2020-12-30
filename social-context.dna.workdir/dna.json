@@ -8,6 +8,9 @@
     },
     "social_context_chunked": {
       "wasm_path": "../target/wasm32-unknown-unknown/release/social_context_chunked.wasm"
+    },
+    "social_context_link_store": {
+      "wasm_path": "../target/wasm32-unknown-unknown/release/social_context_link_store.wasm"
     }
   }
 }
