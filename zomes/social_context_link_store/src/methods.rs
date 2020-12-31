@@ -1,6 +1,6 @@
 use hdk3::{hash_path::path::Component, prelude::*};
 
-use crate::{AcaiUrl, SocialContextDNA, Triple, TripleParsed, SOFT_CHUNK_LIMIT};
+use crate::{AcaiUrl, SocialContextDNA, TripleResponse, TripleParsed, SOFT_CHUNK_LIMIT};
 
 impl SocialContextDNA {
     pub fn add_link(link: TripleParsed) -> ExternResult<()> {
@@ -19,7 +19,7 @@ impl SocialContextDNA {
         Ok(())
     }
 
-    pub fn get_links(subject: String, predicate: Option<String>) -> ExternResult<Vec<Triple>> {
+    pub fn get_links(subject: String, predicate: Option<String>) -> ExternResult<Vec<TripleResponse>> {
         let subject_acai = AcaiUrl::try_from(subject.clone())?;
 
         let subject_path = if subject_acai.language != "chunk" {
@@ -60,7 +60,7 @@ impl SocialContextDNA {
                         .to_owned(),
                 )?
                 .into();
-                Ok(Triple {
+                Ok(TripleResponse {
                     subject: Some(subject.clone()),
                     object: Some(if path.len() == 1 {
                         String::try_from(&path[0]).unwrap()
@@ -78,10 +78,11 @@ impl SocialContextDNA {
                             "Got path with more than two elements".to_string(),
                         )));
                     }),
-                    predicate: predicate.clone()
+                    predicate: predicate.clone(),
+                    timestamp: chrono::DateTime::from(link.timestamp)
                 })
             })
-            .collect::<ExternResult<Vec<Triple>>>()?)
+            .collect::<ExternResult<Vec<TripleResponse>>>()?)
     }
 
     pub fn get_others(source: String) -> ExternResult<Vec<String>> {

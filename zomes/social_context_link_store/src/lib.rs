@@ -46,7 +46,15 @@ pub fn get_others(subject: Subject) -> ExternResult<GetOthers> {
 }
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes)]
-pub struct GetLinksResponse(pub Vec<Triple>);
+pub struct TripleResponse {
+    pub subject: Option<String>,
+    pub object: Option<String>,
+    pub predicate: Option<String>,
+    pub timestamp: chrono::DateTime<chrono::Utc>
+}
+
+#[derive(Serialize, Deserialize, Clone, SerializedBytes)]
+pub struct GetLinksResponse(pub Vec<TripleResponse>);
 
 #[hdk_extern]
 pub fn get_links(input: GetLinks) -> ExternResult<GetLinksResponse> {
