@@ -78,10 +78,19 @@ impl SocialContextDNA {
                             "Got path with more than two elements".to_string(),
                         )));
                     }),
-                    predicate: predicate.clone(),
+                    predicate: predicate.clone()
                 })
             })
             .collect::<ExternResult<Vec<Triple>>>()?)
+    }
+
+    pub fn get_others(source: String) -> ExternResult<Vec<String>> {
+        let links = SocialContextDNA::get_links(source, None)?;   
+        Ok(links.into_iter().map(|link| {
+            //TODO: resolve in did profile trait; this should allow use to get the did of this agent
+            //for now we just return the hc-agent representation
+            Ok(link.object.ok_or(HdkError::Wasm(WasmError::Zome(String::from("Expected object to be populated"))))?)
+        }).collect::<ExternResult<Vec<String>>>()?)
     }
 
     pub fn add_link_auto_index(link: TripleParsed) -> ExternResult<()> {

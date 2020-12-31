@@ -14,6 +14,14 @@ pub struct Triple {
 }
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes)]
+pub struct TripleWithAuthor {
+    pub subject: Option<String>,
+    pub object: Option<String>,
+    pub predicate: Option<String>,
+    pub author: String
+}
+
+#[derive(Serialize, Deserialize, Clone, SerializedBytes)]
 pub struct TripleParsed {
     pub subject: AcaiUrl,
     pub object: AcaiUrl,
@@ -24,6 +32,11 @@ pub struct TripleParsed {
 pub struct AcaiUrl {
     pub language: String,
     pub expression: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, SerializedBytes)]
+pub struct Subject{
+    pub subject: String
 }
 
 impl std::fmt::Display for AcaiUrl {

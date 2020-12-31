@@ -18,26 +18,10 @@ fn entry_defs(_: ()) -> ExternResult<EntryDefsCallbackResult> {
 
 #[hdk_extern]
 fn init(_: ()) -> ExternResult<InitCallbackResult> {
-    // let user_anchor_path = Path::from(&Anchor {
-    //     anchor_type: String::from("global_user_anchor"),
-    //     anchor_text: None,
-    // });
-    // //Get a chunk to use on this user anchor
-    // let chunk = methods::get_free_chunk(&user_anchor_path, LinkTag::new("member"))?;
+    let user_anchor = String::from("hc-agent://hc-agent");
+    let agent_url = format!("hc-agent://{}", agent_info()?.agent_latest_pubkey);
 
-    // let user_anchor_path = methods::add_chunk_path(user_anchor_path, chunk);
-    // let anchor_hash = hash_entry(&user_anchor_path)?;
-    // user_anchor_path.ensure()?;
-
-    // //Here we actually dont need to store the address since it is already present with the entry
-    // //but for now this is fine
-    // let user_reference = UserReference {
-    //     address: agent_info()?.agent_latest_pubkey,
-    // };
-    // let user_reference_hash = hash_entry(&user_reference)?;
-    // create_entry(&user_reference)?;
-
-    // create_link(anchor_hash, user_reference_hash, LinkTag::new("member"))?;
+    methods::create_bidir_chunked_links(&user_anchor, &agent_url, &String::from(""))?;
     Ok(InitCallbackResult::Pass)
 }
 
@@ -51,6 +35,14 @@ pub fn add_link_auto_index(link: Triple) -> ExternResult<()> {
 pub fn add_link(link: Triple) -> ExternResult<()> {
     let link = TripleParsed::try_from(link)?;
     SocialContextDNA::add_link(link)
+}
+
+#[derive(Serialize, Deserialize, Clone, SerializedBytes)]
+pub struct GetOthers(pub Vec<String>);
+
+#[hdk_extern]
+pub fn get_others(subject: Subject) -> ExternResult<GetOthers> {
+    Ok(GetOthers(SocialContextDNA::get_others(subject.subject)?))
 }
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes)]
