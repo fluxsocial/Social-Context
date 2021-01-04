@@ -18,7 +18,7 @@ pub struct TripleWithAuthor {
     pub subject: Option<String>,
     pub object: Option<String>,
     pub predicate: Option<String>,
-    pub author: String
+    pub author: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes)]
@@ -35,8 +35,8 @@ pub struct AcaiUrl {
 }
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes)]
-pub struct Subject{
-    pub subject: String
+pub struct Subject {
+    pub subject: String,
 }
 
 impl std::fmt::Display for AcaiUrl {

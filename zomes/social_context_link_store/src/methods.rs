@@ -1,6 +1,6 @@
 use hdk3::{hash_path::path::Component, prelude::*};
 
-use crate::{AcaiUrl, SocialContextDNA, TripleResponse, TripleParsed, SOFT_CHUNK_LIMIT};
+use crate::{AcaiUrl, SocialContextDNA, TripleParsed, TripleResponse, SOFT_CHUNK_LIMIT};
 
 impl SocialContextDNA {
     pub fn add_link(link: TripleParsed) -> ExternResult<()> {
@@ -19,7 +19,10 @@ impl SocialContextDNA {
         Ok(())
     }
 
-    pub fn get_links(subject: String, predicate: Option<String>) -> ExternResult<Vec<TripleResponse>> {
+    pub fn get_links(
+        subject: String,
+        predicate: Option<String>,
+    ) -> ExternResult<Vec<TripleResponse>> {
         let subject_acai = AcaiUrl::try_from(subject.clone())?;
 
         let subject_path = if subject_acai.language != "chunk" {
@@ -57,9 +60,13 @@ impl SocialContextDNA {
                             "Could not get entry for link with target: {}",
                             link.target
                         ))))?
-                        .to_owned(),
+                        .to_owned()
                 )?
                 .into();
+                let link_details = get(link.create_link_hash, GetOptions::default())?
+                    .ok_or(HdkError::Wasm(WasmError::Zome(
+                        String::from("Could not get details for link"),
+                    )))?;
                 Ok(TripleResponse {
                     subject: Some(subject.clone()),
                     object: Some(if path.len() == 1 {
@@ -79,19 +86,27 @@ impl SocialContextDNA {
                         )));
                     }),
                     predicate: predicate.clone(),
-                    timestamp: chrono::DateTime::from(link.timestamp)
+                    timestamp: chrono::DateTime::from(link.timestamp),
+                    author: format!("hc-agent://{}", link_details.header().author()),
                 })
             })
             .collect::<ExternResult<Vec<TripleResponse>>>()?)
     }
 
     pub fn get_others(source: String) -> ExternResult<Vec<String>> {
-        let links = SocialContextDNA::get_links(source, None)?;   
-        Ok(links.into_iter().map(|link| {
-            //TODO: resolve in did profile trait; this should allow use to get the did of this agent
-            //for now we just return the hc-agent representation
-            Ok(link.object.ok_or(HdkError::Wasm(WasmError::Zome(String::from("Expected object to be populated"))))?)
-        }).collect::<ExternResult<Vec<String>>>()?)
+        let links = SocialContextDNA::get_links(source, None)?;
+        Ok(links
+            .into_iter()
+            .map(|link| {
+                //TODO: resolve in did profile trait; this should allow use to get the did of this agent
+                //for now we just return the hc-agent representation
+                Ok(link
+                    .object
+                    .ok_or(HdkError::Wasm(WasmError::Zome(String::from(
+                        "Expected object to be populated",
+                    ))))?)
+            })
+            .collect::<ExternResult<Vec<String>>>()?)
     }
 
     pub fn add_link_auto_index(link: TripleParsed) -> ExternResult<()> {
@@ -112,74 +127,34 @@ impl SocialContextDNA {
         create_bidir_chunked_links(&subject_url, &object_url, &predicate_url)?;
 
         //Create link between subject and object lang; i.e this subject relates to this language
-        create_bidir_chunked_links(
-            &subject_url,
-            &object_language,
-            &predicate_url,
-        )?;
+        create_bidir_chunked_links(&subject_url, &object_language, &predicate_url)?;
 
         //Create link between object and subject lang; i.e this object is related to subjects language
-        create_bidir_chunked_links(
-            &object_url,
-            &subject_language,
-            &predicate_url,
-        )?;
+        create_bidir_chunked_links(&object_url, &subject_language, &predicate_url)?;
 
         //Create link between subject and agent; i.e this agent is doing something on this subject
-        create_bidir_chunked_links(
-            &subject_url,
-            &agent_url,
-            &predicate_url,
-        )?;
+        create_bidir_chunked_links(&subject_url, &agent_url, &predicate_url)?;
 
         //Create link between agent and object; i.e agent is communicating on/with this object
-        create_bidir_chunked_links(
-            &object_url,
-            &agent_url,
-            &predicate_url,
-        )?;
+        create_bidir_chunked_links(&object_url, &agent_url, &predicate_url)?;
 
         //Create link between object language and object expression; i.e this language has given expression
-        create_bidir_chunked_links(
-            &object_language,
-            &object_url,
-            &predicate_url,
-        )?;
+        create_bidir_chunked_links(&object_language, &object_url, &predicate_url)?;
 
         //Create link between subject language and subject expression; i.e this language has given expression
-        create_bidir_chunked_links(
-            &subject_language,
-            &subject_url,
-            &predicate_url,
-        )?;
+        create_bidir_chunked_links(&subject_language, &subject_url, &predicate_url)?;
 
         //Create link between agent and object language; i.e agent is communicating on this object language
-        create_bidir_chunked_links(
-            &agent_url,
-            &object_language,
-            &predicate_url,
-        )?;
+        create_bidir_chunked_links(&agent_url, &object_language, &predicate_url)?;
 
         //Create link between agent and subject language; i.e agent is communicating on this subject language
-        create_bidir_chunked_links(
-            &agent_url,
-            &subject_language,
-            &predicate_url,
-        )?;
-        
+        create_bidir_chunked_links(&agent_url, &subject_language, &predicate_url)?;
+
         //Create link between object lang and object
-        create_bidir_chunked_links(
-            &object_language,
-            &object_url,
-            &predicate_url,
-        )?;
+        create_bidir_chunked_links(&object_language, &object_url, &predicate_url)?;
 
         //Create link between subject lang and subject
-        create_bidir_chunked_links(
-            &subject_language,
-            &subject_url,
-            &predicate_url,
-        )?;
+        create_bidir_chunked_links(&subject_language, &subject_url, &predicate_url)?;
 
         Ok(())
     }

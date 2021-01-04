@@ -50,7 +50,8 @@ pub struct TripleResponse {
     pub subject: Option<String>,
     pub object: Option<String>,
     pub predicate: Option<String>,
-    pub timestamp: chrono::DateTime<chrono::Utc>
+    pub timestamp: chrono::DateTime<chrono::Utc>,
+    pub author: String
 }
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes)]
