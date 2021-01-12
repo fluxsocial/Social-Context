@@ -5,7 +5,6 @@ use hdk3::prelude::*;
 
 mod inputs;
 mod methods;
-mod out;
 
 use inputs::*;
 
@@ -24,20 +23,9 @@ fn entry_defs(_: ()) -> ExternResult<EntryDefsCallbackResult> {
     Ok(vec![Path::entry_def(), LinkExpression::entry_def(), Anchor::entry_def()].into())
 }
 
-/// Extern zome functions
-
 #[hdk_extern]
 fn init(_: ()) -> ExternResult<InitCallbackResult> {
-    // let user_anchor = String::from("hc-agent://hc-agent");
-    // let agent_url = format!("hc-agent://{}", agent_info()?.agent_latest_pubkey);
-
-    // methods::create_bidir_chunked_links(&user_anchor, &agent_url, &String::from(""))?;
     Ok(InitCallbackResult::Pass)
-}
-
-#[hdk_extern]
-pub fn add_link(link: LinkExpression) -> ExternResult<()> {
-    SocialContextDNA::add_link(link)
 }
 
 // #[hdk_extern]
@@ -45,13 +33,18 @@ pub fn add_link(link: LinkExpression) -> ExternResult<()> {
 //     Ok(ValidateLinkCallbackResult::Valid)
 // }
 
-// #[derive(Serialize, Deserialize, Clone, SerializedBytes)]
-// pub struct GetOthers(pub Vec<String>);
+#[hdk_extern]
+pub fn add_link(link: LinkExpression) -> ExternResult<()> {
+    SocialContextDNA::add_link(link)
+}
 
-// #[hdk_extern]
-// pub fn get_others(subject: Subject) -> ExternResult<GetOthers> {
-//     Ok(GetOthers(SocialContextDNA::get_others(subject.0)?))
-// }
+#[derive(Serialize, Deserialize, Clone, SerializedBytes)]
+pub struct GetOthers(pub Vec<String>);
+
+#[hdk_extern]
+pub fn get_others(_: ()) -> ExternResult<GetOthers> {
+    Ok(GetOthers(SocialContextDNA::get_others()?))
+}
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes)]
 pub struct GetLinksResponse(pub Vec<LinkExpression>);
