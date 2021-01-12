@@ -1,7 +1,7 @@
 use hdk3::{hash_path::path::Component, prelude::*};
 
 use crate::{
-    LinkExpression, SocialContextDNA, Triple
+    LinkExpression, SocialContextDNA, Triple, Agent
 };
 
 impl SocialContextDNA {
@@ -11,13 +11,10 @@ impl SocialContextDNA {
             anchor_text: None,
             anchor_type: String::from("users")
         };
-        let did_anchor = Anchor {
-            anchor_text: Some(link.author.did.clone()),
-            anchor_type: String::from("user")
-        };
+        let did_agent = link.author.clone();
         create_entry(&user_anchor)?;
-        create_entry(&did_anchor)?;
-        create_link(hash_entry(&user_anchor)?, hash_entry(&did_anchor)?,LinkTag::new(link.author.did.clone()))?;
+        create_entry(&did_agent)?;
+        create_link(hash_entry(&user_anchor)?, hash_entry(&did_agent)?,LinkTag::new(link.author.did.clone()))?;
 
         let link_indexes = generate_link_path_permutations(link)?;
 
@@ -86,7 +83,7 @@ impl SocialContextDNA {
         )
     }
 
-    pub fn get_others() -> ExternResult<Vec<String>> {
+    pub fn get_others() -> ExternResult<Vec<Agent>> {
         let user_anchor = Anchor {
             anchor_text: None,
             anchor_type: String::from("users")
@@ -94,18 +91,16 @@ impl SocialContextDNA {
         Ok(get_links(hash_entry(&user_anchor)?, None)?.into_inner()
             .into_iter()
             .map(|link| {
-                let did_anchor = get(link.target, GetOptions::default())?.ok_or(HdkError::Wasm(
+                let did_agent = get(link.target, GetOptions::default())?.ok_or(HdkError::Wasm(
                     WasmError::Zome(String::from("Could not find target for link")),
                 ))?;
-                let did_anchor: Anchor = did_anchor.entry().to_app_option()?.ok_or(HdkError::Wasm(
+                let did_agent: Agent = did_agent.entry().to_app_option()?.ok_or(HdkError::Wasm(
                     WasmError::Zome(String::from("Could not deserialize link expression data into LinkAcaiData")),
                 ))?;
 
-                Ok(did_anchor.anchor_text.ok_or(HdkError::Wasm(
-                    WasmError::Zome(String::from("Did anchors should always contain anchor_text")),
-                ))?)
+                Ok(did_agent)
             })
-            .collect::<ExternResult<Vec<String>>>()?)
+            .collect::<ExternResult<Vec<Agent>>>()?)
     }
 }
 

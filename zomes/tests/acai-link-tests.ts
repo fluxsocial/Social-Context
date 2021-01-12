@@ -168,6 +168,26 @@ orchestrator.registerScenario("basic link testing", async (s, t) => {
     console.log("predicate links", pred_links4)
 })
 
+orchestrator.registerScenario("test get others", async (s, t) => {
+  const [alice, bob] = await s.players([conductorConfig, conductorConfig])
+
+  const [
+  [alice_sc_happ],
+  ] = await alice.installAgentsHapps(installation)
+  const [
+  [bob_sc_happ],
+  ] = await bob.installAgentsHapps(installation)
+   
+  //Create a link so that the agent actually exists
+  await alice_sc_happ.cells[0].call("social_context_acai", "add_link",  { data: {subject: "subject-full", object: "object-full", predicate: "predicate-full"},
+  author: {did: "test1", name: null, email: null}, timestamp: "iso8601", proof: {signature: "sig", key: "key"} })
+
+  //Get links on subject; expect back object & predicate
+  const others = await bob_sc_happ.cells[0].call("social_context_acai", "get_others", null)
+  t.deepEqual(others.length, 1);
+  console.log("others", others);
+})
+
 // Run all registered scenarios as a final step, and gather the report,
 // if you set up a reporter
 const report = orchestrator.run()

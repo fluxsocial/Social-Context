@@ -20,7 +20,7 @@ pub struct LinkExpression {
 
 #[hdk_extern]
 fn entry_defs(_: ()) -> ExternResult<EntryDefsCallbackResult> {
-    Ok(vec![Path::entry_def(), LinkExpression::entry_def(), Anchor::entry_def()].into())
+    Ok(vec![Path::entry_def(), LinkExpression::entry_def(), Anchor::entry_def(), Agent::entry_def()].into())
 }
 
 #[hdk_extern]
@@ -39,7 +39,7 @@ pub fn add_link(link: LinkExpression) -> ExternResult<()> {
 }
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes)]
-pub struct GetOthers(pub Vec<String>);
+pub struct GetOthers(pub Vec<Agent>);
 
 #[hdk_extern]
 pub fn get_others(_: ()) -> ExternResult<GetOthers> {

@@ -1,6 +1,8 @@
 use hdk3::prelude::*;
 
-#[derive(Serialize, Deserialize, Clone, SerializedBytes)]
+#[hdk_entry(id = "acai_agent", visibility = "public")]
+#[serde(rename_all = "camelCase")]
+#[derive(Clone)]
 pub struct Agent {
     pub did: String,
     pub name: Option<String>,
