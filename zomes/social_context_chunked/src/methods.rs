@@ -1,4 +1,5 @@
 use hdk3::hash_path::{anchor::Anchor, path::Component};
+use hdk3::prelude::link::Link;
 use hdk3::prelude::*;
 use holo_hash::DnaHash;
 

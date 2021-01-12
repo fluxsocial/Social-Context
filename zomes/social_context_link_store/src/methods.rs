@@ -60,13 +60,13 @@ impl SocialContextDNA {
                             "Could not get entry for link with target: {}",
                             link.target
                         ))))?
-                        .to_owned()
+                        .to_owned(),
                 )?
                 .into();
-                let link_details = get(link.create_link_hash, GetOptions::default())?
-                    .ok_or(HdkError::Wasm(WasmError::Zome(
-                        String::from("Could not get details for link"),
-                    )))?;
+                let link_details =
+                    get(link.create_link_hash, GetOptions::default())?.ok_or(HdkError::Wasm(
+                        WasmError::Zome(String::from("Could not get details for link")),
+                    ))?;
                 Ok(TripleResponse {
                     subject: Some(subject.clone()),
                     object: Some(if path.len() == 1 {

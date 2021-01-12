@@ -11,6 +11,9 @@
     },
     "social_context_link_store": {
       "wasm_path": "../target/wasm32-unknown-unknown/release/social_context_link_store.wasm"
+    },
+    "social_context_acai": {
+      "wasm_path": "../target/wasm32-unknown-unknown/release/social_context_acai.wasm"
     }
   }
 }

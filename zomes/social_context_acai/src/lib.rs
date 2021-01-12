@@ -9,31 +9,34 @@ mod out;
 
 use inputs::*;
 
+#[hdk_entry(id = "link_acai_data", visibility = "public")]
+#[serde(rename_all = "camelCase")]
+#[derive(Clone)]
+pub struct LinkExpression {
+    pub author: Agent,
+    pub data: Triple,
+    pub timestamp: String,
+    pub proof: ExpressionProof,
+}
+
 #[hdk_extern]
 fn entry_defs(_: ()) -> ExternResult<EntryDefsCallbackResult> {
-    Ok(vec![Path::entry_def()].into())
+    Ok(vec![Path::entry_def(), LinkExpression::entry_def(), Anchor::entry_def()].into())
 }
 
 /// Extern zome functions
 
 #[hdk_extern]
 fn init(_: ()) -> ExternResult<InitCallbackResult> {
-    let user_anchor = String::from("hc-agent://hc-agent");
-    let agent_url = format!("hc-agent://{}", agent_info()?.agent_latest_pubkey);
+    // let user_anchor = String::from("hc-agent://hc-agent");
+    // let agent_url = format!("hc-agent://{}", agent_info()?.agent_latest_pubkey);
 
-    methods::create_bidir_chunked_links(&user_anchor, &agent_url, &String::from(""))?;
+    // methods::create_bidir_chunked_links(&user_anchor, &agent_url, &String::from(""))?;
     Ok(InitCallbackResult::Pass)
 }
 
 #[hdk_extern]
-pub fn add_link_auto_index(link: Triple) -> ExternResult<()> {
-    let link = TripleParsed::try_from(link)?;
-    SocialContextDNA::add_link_auto_index(link)
-}
-
-#[hdk_extern]
-pub fn add_link(link: Triple) -> ExternResult<()> {
-    let link = TripleParsed::try_from(link)?;
+pub fn add_link(link: LinkExpression) -> ExternResult<()> {
     SocialContextDNA::add_link(link)
 }
 
@@ -42,32 +45,20 @@ pub fn add_link(link: Triple) -> ExternResult<()> {
 //     Ok(ValidateLinkCallbackResult::Valid)
 // }
 
+// #[derive(Serialize, Deserialize, Clone, SerializedBytes)]
+// pub struct GetOthers(pub Vec<String>);
+
+// #[hdk_extern]
+// pub fn get_others(subject: Subject) -> ExternResult<GetOthers> {
+//     Ok(GetOthers(SocialContextDNA::get_others(subject.0)?))
+// }
+
 #[derive(Serialize, Deserialize, Clone, SerializedBytes)]
-pub struct GetOthers(pub Vec<String>);
+pub struct GetLinksResponse(pub Vec<LinkExpression>);
 
 #[hdk_extern]
-pub fn get_others(subject: Subject) -> ExternResult<GetOthers> {
-    Ok(GetOthers(SocialContextDNA::get_others(subject.subject)?))
-}
-
-#[derive(Serialize, Deserialize, Clone, SerializedBytes)]
-pub struct TripleResponse {
-    pub subject: Option<String>,
-    pub object: Option<String>,
-    pub predicate: Option<String>,
-    pub timestamp: chrono::DateTime<chrono::Utc>,
-    pub author: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, SerializedBytes)]
-pub struct GetLinksResponse(pub Vec<TripleResponse>);
-
-#[hdk_extern]
-pub fn get_links(input: GetLinks) -> ExternResult<GetLinksResponse> {
-    Ok(GetLinksResponse(SocialContextDNA::get_links(
-        input.subject,
-        input.predicate,
-    )?))
+pub fn get_links(input: Triple) -> ExternResult<GetLinksResponse> {
+    Ok(GetLinksResponse(SocialContextDNA::get_links(input)?))
 }
 
 /// Configuration
