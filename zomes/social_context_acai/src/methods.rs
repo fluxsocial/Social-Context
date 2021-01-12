@@ -12,12 +12,12 @@ impl SocialContextDNA {
             anchor_type: String::from("users")
         };
         let did_anchor = Anchor {
-            anchor_text: Some(String::from(link.author.did.clone())),
+            anchor_text: Some(link.author.did.clone()),
             anchor_type: String::from("user")
         };
         create_entry(&user_anchor)?;
         create_entry(&did_anchor)?;
-        create_link(hash_entry(&user_anchor)?, hash_entry(&did_anchor)?,LinkTag::new(String::from(link.author.did.clone())))?;
+        create_link(hash_entry(&user_anchor)?, hash_entry(&did_anchor)?,LinkTag::new(link.author.did.clone()))?;
 
         let link_indexes = generate_link_path_permutations(link)?;
 
@@ -49,21 +49,23 @@ impl SocialContextDNA {
         };
         
         let (start, tag) = if triple.subject.is_some() {
+            let subject = triple.subject.unwrap();
             if triple.object.is_some() {
-                (Path::from(vec![Component::from(triple.subject.unwrap().clone())]), Component::from(triple.object.unwrap().clone()))
+                (Path::from(vec![Component::from(subject)]), Component::from(triple.object.unwrap()))
             } else if triple.predicate.is_some() {
-                (Path::from(vec![Component::from(triple.subject.unwrap().clone())]), Component::from(triple.predicate.unwrap().clone()))
+                (Path::from(vec![Component::from(subject)]), Component::from(triple.predicate.unwrap()))
             } else {
-                (Path::from(vec![Component::from(triple.subject.unwrap().clone())]), Component::from("*"))
+                (Path::from(vec![Component::from(subject)]), Component::from("*"))
             }
         } else if triple.object.is_some() {
+            let object = triple.object.unwrap();
             if triple.predicate.is_some() {
-                (Path::from(vec![Component::from(triple.object.unwrap().clone())]), Component::from(triple.predicate.unwrap().clone()))
+                (Path::from(vec![Component::from(object)]), Component::from(triple.predicate.unwrap()))
             } else {
-                (Path::from(vec![Component::from(triple.object.unwrap().clone())]), Component::from("*"))
+                (Path::from(vec![Component::from(object)]), Component::from("*"))
             }
         } else {
-            (Path::from(vec![Component::from(triple.predicate.unwrap().clone())]), Component::from("*"))
+            (Path::from(vec![Component::from(triple.predicate.unwrap())]), Component::from("*"))
         };
 
         Ok(
@@ -71,7 +73,7 @@ impl SocialContextDNA {
                 .into_inner()
                 .into_iter()
                 .map(|link| {
-                    let target = get(link.target.clone(), GetOptions::default())?.ok_or(HdkError::Wasm(
+                    let target = get(link.target, GetOptions::default())?.ok_or(HdkError::Wasm(
                         WasmError::Zome(String::from("Could not find target for link")),
                     ))?;
                     let acai_exp_data: LinkExpression = target.entry().to_app_option()?.ok_or(HdkError::Wasm(
@@ -191,15 +193,15 @@ pub fn generate_link_path_permutations(link: LinkExpression) -> ExternResult<Vec
         ));
         //Subject predicate -> * -> LinkExpression
         out.push((
-            Path::from(vec![subject.clone(), predicate.clone()]),
+            Path::from(vec![subject, predicate.clone()]),
             Path::from(vec![wildcard.clone()]),
             link.clone(),
         ));
         //Object predicate -> * -> LinkExpression
         out.push((
-            Path::from(vec![object.clone(), predicate.clone()]),
-            Path::from(vec![wildcard.clone()]),
-            link.clone(),
+            Path::from(vec![object, predicate]),
+            Path::from(vec![wildcard]),
+            link,
         ));
         Ok(out)
     } else if num_entities == 2 {
@@ -223,16 +225,16 @@ pub fn generate_link_path_permutations(link: LinkExpression) -> ExternResult<Vec
 
                 //Subject -> wildcard -> LinkExpression
                 out.push((
-                    Path::from(vec![subject.clone()]),
+                    Path::from(vec![subject]),
                     Path::from(vec![wildcard.clone()]),
                     link.clone(),
                 ));
 
                 //Object -> wildcard -> LinkExpression
                 out.push((
-                    Path::from(vec![object.clone()]),
-                    Path::from(vec![wildcard.clone()]),
-                    link.clone(),
+                    Path::from(vec![object]),
+                    Path::from(vec![wildcard]),
+                    link,
                 ));
             } else {
                 let subject = Component::from(link.data.subject.clone().unwrap());
@@ -253,16 +255,16 @@ pub fn generate_link_path_permutations(link: LinkExpression) -> ExternResult<Vec
 
                 //Subject -> wildcard -> LinkExpression
                 out.push((
-                    Path::from(vec![subject.clone()]),
+                    Path::from(vec![subject]),
                     Path::from(vec![wildcard.clone()]),
                     link.clone(),
                 ));
 
                 //Predicate -> wildcard -> LinkExpression
                 out.push((
-                    Path::from(vec![predicate.clone()]),
-                    Path::from(vec![wildcard.clone()]),
-                    link.clone(),
+                    Path::from(vec![predicate]),
+                    Path::from(vec![wildcard]),
+                    link,
                 ));
             };
         } else if link.data.object.is_some() {
@@ -284,46 +286,45 @@ pub fn generate_link_path_permutations(link: LinkExpression) -> ExternResult<Vec
 
             //Object -> wildcard -> LinkExpression
             out.push((
-                Path::from(vec![object.clone()]),
+                Path::from(vec![object]),
                 Path::from(vec![wildcard.clone()]),
                 link.clone(),
             ));
 
             //Predicate -> wildcard -> LinkExpression
             out.push((
-                Path::from(vec![predicate.clone()]),
-                Path::from(vec![wildcard.clone()]),
-                link.clone(),
+                Path::from(vec![predicate]),
+                Path::from(vec![wildcard]),
+                link,
             ));
         } else {
             unreachable!()
+            
         };
         Ok(out)
+    } else if link.data.subject.is_some() {
+        let subject = Component::from(link.data.subject.clone().unwrap());
+        out.push((
+            Path::from(vec![subject]),
+            Path::from(vec![wildcard]),
+            link,
+        ));
+        Ok(out)
+    } else if link.data.object.is_some() {
+        let object = Component::from(link.data.object.clone().unwrap());
+        out.push((
+            Path::from(vec![object]),
+            Path::from(vec![wildcard]),
+            link,
+        ));
+        Ok(out)
     } else {
-        if link.data.subject.is_some() {
-            let subject = Component::from(link.data.subject.clone().unwrap());
-            out.push((
-                Path::from(vec![subject]),
-                Path::from(vec![wildcard.clone()]),
-                link.clone(),
-            ));
-            Ok(out)
-        } else if link.data.object.is_some() {
-            let object = Component::from(link.data.object.clone().unwrap());
-            out.push((
-                Path::from(vec![object]),
-                Path::from(vec![wildcard.clone()]),
-                link.clone(),
-            ));
-            Ok(out)
-        } else {
-            let predicate = Component::from(link.data.predicate.clone().unwrap());
-            out.push((
-                Path::from(vec![predicate]),
-                Path::from(vec![wildcard.clone()]),
-                link.clone(),
-            ));
-            Ok(out)
-        }
+        let predicate = Component::from(link.data.predicate.clone().unwrap());
+        out.push((
+            Path::from(vec![predicate]),
+            Path::from(vec![wildcard]),
+            link,
+        ));
+        Ok(out)
     }
 }
