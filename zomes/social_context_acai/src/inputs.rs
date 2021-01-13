@@ -15,18 +15,17 @@ pub struct ExpressionProof {
     pub key: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, SerializedBytes)]
-pub struct GetLinks {
-    pub subject: String,
+#[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
+pub struct Triple {
+    #[serde(rename(serialize = "source", deserialize = "source"))]
+    pub subject: Option<String>,
+    #[serde(rename(serialize = "target", deserialize = "target"))]
+    pub object: Option<String>,
     pub predicate: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
-pub struct Triple {
-    pub subject: Option<String>,
-    pub object: Option<String>,
-    pub predicate: Option<String>,
-}
+pub struct UriTag(pub String);
 
 impl Triple {
     pub fn num_entities(&self) -> usize {
@@ -45,7 +44,6 @@ impl Triple {
     }
 }
 
-
 #[derive(Serialize, Deserialize, Clone, SerializedBytes)]
 pub struct TripleParsed {
     pub subject: Option<AcaiUrl>,
@@ -58,7 +56,6 @@ pub struct AcaiUrl {
     pub language: String,
     pub expression: String,
 }
-
 
 impl std::fmt::Display for AcaiUrl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -89,9 +86,7 @@ impl TryFrom<String> for AcaiUrl {
     }
 }
 
-fn extract_acai_url(
-    val: Option<String>,
-) -> ExternResult<Option<AcaiUrl>> {
+fn extract_acai_url(val: Option<String>) -> ExternResult<Option<AcaiUrl>> {
     if let Some(inner_val) = val {
         let split: Vec<&str> = inner_val.split("://").into_iter().collect();
         if split.len() == 2 {

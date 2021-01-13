@@ -48,122 +48,122 @@ orchestrator.registerScenario("basic link testing", async (s, t) => {
     /// SIMPLE LINK TEST
      
     //Test case where subject object and predicate are given
-    await alice_sc_happ.cells[0].call("social_context_acai", "add_link",  { data: {subject: "subject-full", object: "object-full", predicate: "predicate-full"},
+    await alice_sc_happ.cells[0].call("social_context_acai", "add_link",  { data: {source: "subject-full", target: "object-full", predicate: "predicate-full"},
     author: {did: "test1", name: null, email: null}, timestamp: "iso8601", proof: {signature: "sig", key: "key"} })
 
     //Get links on subject; expect back object & predicate
-    const subj_links = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {subject: "subject-full", object: null, predicate: null})
+    const subj_links = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {source: "subject-full", target: null, predicate: null})
     t.deepEqual(subj_links.length, 1);
     console.log("subject links", subj_links);
 
     //Get links on subject & object; expect back predicate 
-    const subj_obj_links = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {subject: "subject-full", object: "object-full", predicate: null})
+    const subj_obj_links = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {source: "subject-full", target: "object-full", predicate: null})
     t.deepEqual(subj_obj_links.length, 1);
     console.log("subject object links", subj_obj_links);
 
     //Get links on object; expect back subject and predicate
-    const object_links = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {subject: null, object: "object-full", predicate: null})
+    const object_links = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {source: null, target: "object-full", predicate: null})
     t.deepEqual(object_links.length, 1);
     console.log("object links", object_links);
 
     //Get links on object & predicate; expect back subject
-    const object_pred_links = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {subject: null, object: "object-full", predicate: "predicate-full"})
+    const object_pred_links = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {source: null, target: "object-full", predicate: "predicate-full"})
     t.deepEqual(object_pred_links.length, 1);
     console.log("object predicate links", object_pred_links)
 
     //Get links on predicate; expect back subject and object
-    const pred_links = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {subject: null, object: null, predicate: "predicate-full"})
+    const pred_links = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {source: null, target: null, predicate: "predicate-full"})
     t.deepEqual(pred_links.length, 1);
     console.log("predicate links", pred_links)
 
     /// SUBJECT OBJECT LINK TEST
 
     //Test case where subject and object are given
-    await alice_sc_happ.cells[0].call("social_context_acai", "add_link",  { data: {subject: "subject-2", object: "object-2", predicate: null},
+    await alice_sc_happ.cells[0].call("social_context_acai", "add_link",  { data: {source: "subject-2", target: "Qmd6AZzLjfGWNAqWLGTGy354JC1bK26XNf7rTEEsJfv7Fe://Qmdrbjto9DDbUY8eMALPfmB35xh9m2Yce8ksk1NkMEZnQ9", predicate: null},
     author: {did: "test1", name: null, email: null}, timestamp: "iso8601", proof: {signature: "sig", key: "key"} })
 
     //Get links on subject; expect back object & predicate
-    const subj_links2 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {subject: "subject-2", object: null, predicate: null})
+    const subj_links2 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {source: "subject-2", target: null, predicate: null})
     t.deepEqual(subj_links2.length, 1);
     console.log("subject links", subj_links2);
 
     //Get links on subject & object; expect back link 
-    const subj_obj_links2 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {subject: "subject-2", object: "object-2", predicate: null})
+    const subj_obj_links2 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {source: "subject-2", target: "Qmd6AZzLjfGWNAqWLGTGy354JC1bK26XNf7rTEEsJfv7Fe://Qmdrbjto9DDbUY8eMALPfmB35xh9m2Yce8ksk1NkMEZnQ9", predicate: null})
     t.deepEqual(subj_obj_links2.length, 1);
     console.log("subject object links", subj_obj_links2);
 
     //Get links on object; expect back subject and predicate
-    const object_links2 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {subject: null, object: "object-2", predicate: null})
+    const object_links2 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {source: null, target: "Qmd6AZzLjfGWNAqWLGTGy354JC1bK26XNf7rTEEsJfv7Fe://Qmdrbjto9DDbUY8eMALPfmB35xh9m2Yce8ksk1NkMEZnQ9", predicate: null})
     t.deepEqual(object_links2.length, 1);
     console.log("object links", object_links2);
 
     //Get links on object & predicate; expect back none
-    const object_pred_links2 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {subject: null, object: "object-2", predicate: "predicate-2"})
+    const object_pred_links2 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {source: null, target: "Qmd6AZzLjfGWNAqWLGTGy354JC1bK26XNf7rTEEsJfv7Fe://Qmdrbjto9DDbUY8eMALPfmB35xh9m2Yce8ksk1NkMEZnQ9", predicate: "predicate-2"})
     t.deepEqual(object_pred_links2.length, 0);
     console.log("object predicate links", object_pred_links2)
 
     //Get links on predicate; expect back none
-    const pred_links2 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {subject: null, object: null, predicate: "predicate-2"})
+    const pred_links2 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {source: null, target: null, predicate: "predicate-2"})
     t.deepEqual(pred_links2.length, 0);
     console.log("predicate links", pred_links2)
 
     //Test case where subject and predicate are given
 
-    await alice_sc_happ.cells[0].call("social_context_acai", "add_link",  { data: {subject: "subject-3", object: null, predicate: "predicate-3"},
+    await alice_sc_happ.cells[0].call("social_context_acai", "add_link",  { data: {source: "subject-3", target: null, predicate: "predicate-3"},
     author: {did: "test1", name: null, email: null}, timestamp: "iso8601", proof: {signature: "sig", key: "key"} })
 
     //Get links on subject
-    const subj_links3 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {subject: "subject-3", object: null, predicate: null})
+    const subj_links3 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {source: "subject-3", target: null, predicate: null})
     t.deepEqual(subj_links3.length, 1);
     console.log("subject links", subj_links3);
 
     //Get links on subject & object
-    const subj_obj_links3 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {subject: "subject-3", object: "object-3", predicate: null})
+    const subj_obj_links3 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {source: "subject-3", target: "object-3", predicate: null})
     t.deepEqual(subj_obj_links3.length, 0);
     console.log("subject object links", subj_obj_links3);
 
     //Get links on object
-    const object_links3 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {subject: null, object: "object-3", predicate: null})
+    const object_links3 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {source: null, target: "object-3", predicate: null})
     t.deepEqual(object_links3.length, 0);
     console.log("object links", object_links3);
 
     //Get links on object & predicate
-    const object_pred_links3 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {subject: null, object: "object-3", predicate: "predicate-3"})
+    const object_pred_links3 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {source: null, target: "object-3", predicate: "predicate-3"})
     t.deepEqual(object_pred_links3.length, 0);
     console.log("object predicate links", object_pred_links3)
 
     //Get links on predicate
-    const pred_links3 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {subject: null, object: null, predicate: "predicate-3"})
+    const pred_links3 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {source: null, target: null, predicate: "predicate-3"})
     t.deepEqual(pred_links3.length, 1);
     console.log("predicate links", pred_links3)
 
     //Test case where object and predicate are given
 
-    await alice_sc_happ.cells[0].call("social_context_acai", "add_link",  { data: {subject: null, object: "object-4", predicate: "predicate-4"},
+    await alice_sc_happ.cells[0].call("social_context_acai", "add_link",  { data: {source: null, target: "object-4", predicate: "predicate-4"},
     author: {did: "test1", name: null, email: null}, timestamp: "iso8601", proof: {signature: "sig", key: "key"} })
 
     //Get links on subject
-    const subj_links4 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {subject: "subject-4", object: null, predicate: null})
+    const subj_links4 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {source: "subject-4", target: null, predicate: null})
     t.deepEqual(subj_links4.length, 0);
     console.log("subject links", subj_links4);
 
     //Get links on subject & object 
-    const subj_obj_links4 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {subject: "subject-4", object: "object-4", predicate: null})
+    const subj_obj_links4 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {source: "subject-4", target: "object-4", predicate: null})
     t.deepEqual(subj_obj_links4.length, 0);
     console.log("subject object links", subj_obj_links4);
 
     //Get links on object
-    const object_links4 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {subject: null, object: "object-4", predicate: null})
+    const object_links4 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {source: null, target: "object-4", predicate: null})
     t.deepEqual(object_links4.length, 1);
     console.log("object links", object_links4);
 
     //Get links on object & predicate
-    const object_pred_links4 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {subject: null, object: "object-4", predicate: "predicate-4"})
+    const object_pred_links4 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {source: null, target: "object-4", predicate: "predicate-4"})
     t.deepEqual(object_pred_links4.length, 1);
     console.log("object predicate links", object_pred_links4)
 
     //Get links on predicate
-    const pred_links4 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {subject: null, object: null, predicate: "predicate-4"})
+    const pred_links4 = await alice_sc_happ.cells[0].call("social_context_acai", "get_links", {source: null, target: null, predicate: "predicate-4"})
     t.deepEqual(pred_links4.length, 1);
     console.log("predicate links", pred_links4)
 })
@@ -179,7 +179,7 @@ orchestrator.registerScenario("test get others", async (s, t) => {
   ] = await bob.installAgentsHapps(installation)
    
   //Create a link so that the agent actually exists
-  await alice_sc_happ.cells[0].call("social_context_acai", "add_link",  { data: {subject: "subject-full", object: "object-full", predicate: "predicate-full"},
+  await alice_sc_happ.cells[0].call("social_context_acai", "add_link",  { data: {source: "subject-full", target: "object-full", predicate: "predicate-full"},
   author: {did: "test1", name: null, email: null}, timestamp: "iso8601", proof: {signature: "sig", key: "key"} })
 
   //Get links on subject; expect back object & predicate
