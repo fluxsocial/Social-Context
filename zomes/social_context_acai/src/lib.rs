@@ -60,6 +60,17 @@ pub fn get_links(input: Triple) -> ExternResult<GetLinksResponse> {
     Ok(GetLinksResponse(SocialContextDNA::get_links(input)?))
 }
 
+#[derive(Serialize, Deserialize, Clone, SerializedBytes)]
+pub struct UpdateLink {
+    pub source: LinkExpression,
+    pub target: LinkExpression,
+}
+
+#[hdk_extern]
+pub fn update_link(update_link: UpdateLink) -> ExternResult<()> {
+    SocialContextDNA::update_link(update_link)
+}
+
 /// Configuration
 
 /// Possible methods of indexing social context data
