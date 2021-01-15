@@ -1,6 +1,6 @@
 use hdk3::{hash_path::path::Component, prelude::*};
 
-use crate::{add_link, Agent, LinkExpression, SocialContextDNA, Triple, UpdateLink};
+use crate::{Agent, LinkExpression, SocialContextDNA, Triple, UpdateLink, add_link, remove_link};
 
 impl SocialContextDNA {
     pub fn add_link(link: LinkExpression) -> ExternResult<()> {
@@ -156,12 +156,10 @@ impl SocialContextDNA {
             .collect::<ExternResult<Vec<Agent>>>()?)
     }
 
-    //Right now this solution is pretty basic and opts for just deleting the source link and then creating the second
-    //ideally here we could dynamically update links between source, object, predicate -> new link object where overlap occurs
-    pub fn update_link(update_link: UpdateLink) -> ExternResult<()> {
-        let link_indexes = generate_link_path_permutations(&update_link.source)?;
+    pub fn remove_link(link: LinkExpression) -> ExternResult<()> {
+        let link_indexes = generate_link_path_permutations(&link)?;
 
-        let source_hash = hash_entry(&update_link.source)?;
+        let source_hash = hash_entry(&link)?;
         let source_entry = get(source_hash.clone(), GetOptions::default())?.ok_or(
             HdkError::Wasm(WasmError::Zome(String::from("Source link does not exist"))),
         )?;
@@ -193,6 +191,13 @@ impl SocialContextDNA {
             delete_link(link_hash)?;
         };
 
+        Ok(())
+    }
+
+    //Right now this solution is pretty basic and opts for just deleting the source link and then creating the second
+    //ideally here we could dynamically update links between source, object, predicate -> new link object where overlap occurs
+    pub fn update_link(update_link: UpdateLink) -> ExternResult<()> {
+        remove_link(update_link.source)?;
         add_link(update_link.target)?;
 
         Ok(())

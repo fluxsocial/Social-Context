@@ -71,6 +71,12 @@ pub fn update_link(update_link: UpdateLink) -> ExternResult<()> {
     SocialContextDNA::update_link(update_link)
 }
 
+#[hdk_extern]
+pub fn remove_link(remove_link: LinkExpression) -> ExternResult<()> {
+    SocialContextDNA::remove_link(remove_link)
+}
+
+
 /// Configuration
 
 /// Possible methods of indexing social context data
