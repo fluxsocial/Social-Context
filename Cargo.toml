@@ -1,9 +1,7 @@
 [workspace]
 members = [
   "zomes/social_context",
-  "zomes/social_context_chunked",
-  "zomes/social_context_link_store",
-  "zomes/social_context_acai"
+  "zomes/social_context_time_indexed"
 ]
 
 [profile.dev]
@@ -13,6 +11,4 @@ opt-level = "z"
 opt-level = "z"
 
 [patch.crates-io]
-hc_utils = { git = "https://github.com/holochain/hc-utils", branch = "develop", package = "hc_utils" }
-hdk3 = { git = "https://github.com/holochain/holochain", rev = "3675b58", package = "hdk3" }
-holo_hash = { git = "https://github.com/holochain/holochain", rev = "3675b58", package = "holo_hash" }
+hdk3 = { git = "https://github.com/holochain/holochain.git", rev = "fd8049a" }
