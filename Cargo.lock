@@ -160,19 +160,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "hc_time_index"
-version = "0.1.0"
-source = "git+https://github.com/juntofoundation/HC-Time-Chunking?branch=main#8a4a06cad04eeee89d2ccd1f2f4da70c492e6cd8"
-dependencies = [
- "chrono",
- "hdk3",
- "lazy_static",
- "mut_static",
- "permutation",
- "serde",
-]
-
-[[package]]
 name = "hdk3"
 version = "0.0.1"
 source = "git+https://github.com/holochain/holochain.git?rev=fd8049a#fd8049a48ac12ef3e190b48a79ffe8d8b5948caa"
@@ -622,19 +609,7 @@ version = "0.0.1"
 dependencies = [
  "chrono",
  "derive_more",
- "hc_time_index 0.1.0 (git+https://github.com/juntofoundation/HC-Time-Chunking?branch=main)",
- "hdk3",
- "lazy_static",
- "serde",
-]
-
-[[package]]
-name = "social_context_time_indexed"
-version = "0.0.1"
-dependencies = [
- "chrono",
- "derive_more",
- "hc_time_index 0.1.0",
+ "hc_time_index",
  "hdk3",
  "lazy_static",
  "serde",

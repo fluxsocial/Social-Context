@@ -1,12 +1,12 @@
 [package]
 authors = ["josh@junto.foundation"]
 edition = "2018"
-name = "social_context_time_indexed"
+name = "social_context"
 version = "0.0.1"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
-name = "social_context_time_indexed"
+name = "social_context"
 
 [dependencies]
 derive_more = "0"
