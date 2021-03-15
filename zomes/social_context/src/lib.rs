@@ -39,6 +39,7 @@ fn init(_: ()) -> ExternResult<InitCallbackResult> {
 
 #[hdk_extern]
 pub fn add_link(link: LinkExpression) -> ExternResult<()> {
+    debug!("Adding a link from lib");
     SocialContextDNA::add_link(link)
 }
 

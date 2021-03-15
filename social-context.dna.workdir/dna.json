@@ -3,8 +3,8 @@
   "uuid": "",
   "properties": null,
   "zomes": {
-    "social_context_acai": {
-      "wasm_path": "../target/wasm32-unknown-unknown/release/social_context_acai.wasm"
+    "social_context": {
+      "wasm_path": "../target/wasm32-unknown-unknown/release/social_context.wasm"
     }
   }
 }

@@ -16,104 +16,208 @@ const network = {
     }],
     bootstrap_service: "https://bootstrap.holo.host"
 };
-const conductorConfig = Config.gen({network});
-//const conductorConfig = Config.gen();
+//const conductorConfig = Config.gen({network});
+const conductorConfig = Config.gen();
 
-// Construct proper paths for your DNAs
-const socialContext = path.join(__dirname, '../../social-context.dna.gz')
-
-// create an InstallAgentsHapps array with your DNAs to tell tryorama what
-// to install into the conductor.
 const installation: InstallAgentsHapps = [
   // agent 0
   [
     // happ 0
-    [socialContext] // contains 1 dna, the "social-context" dna
+    [path.join("../../social-context.dna.gz")]
   ]
 ]
 
-// Instatiate your test's orchestrator.
-// It comes loaded with a lot default behavior which can be overridden, including:
-// * custom conductor startup
-// * custom test result reporting
-// * scenario middleware, including integration with other test harnesses
 const orchestrator = new Orchestrator()
 
-//This is pretty annoying
-const sample_dna_address = Buffer.from([132, 45, 36, 113, 136, 200, 19, 133, 133, 247, 57, 115, 177, 240, 222, 155, 1, 139, 201, 211, 194, 243, 204, 18, 126, 156, 114, 87, 85, 222, 170, 25, 156, 188, 109, 47, 3, 147, 52])
-const sample_entry_address = Buffer.from([132, 41, 36, 152, 75, 230, 90, 132, 255, 226, 123, 128, 91, 101, 140, 101, 81, 59, 25, 154, 90, 104, 24, 14, 40, 255, 86, 43, 199, 71, 78, 232, 9, 217, 198, 124, 106, 153, 126])
-const sample_entry_address2 = Buffer.from([132, 41, 36, 218, 236, 8, 48, 108, 119, 131, 20, 1, 217, 228, 69, 187, 188, 88, 82, 180, 102, 60, 47, 145, 78, 105, 200, 4, 139, 0, 114, 160, 130, 164, 188, 53, 247, 97, 186])
+orchestrator.registerScenario("basic link testing", async (s, t) => {
+    const [alice, bob] = await s.players([conductorConfig, conductorConfig])
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(() => resolve(), ms));
-
-orchestrator.registerScenario("post and read communication by dna & agent", async (s, t) => {
-  // Declare two players using the previously specified config, nicknaming them "alice" and "bob"
-  // note that the first argument to players is just an array conductor configs that that will
-  // be used to spin up the conductor processes which are returned in a matching array.
-  const [alice, bob] = await s.players([conductorConfig, conductorConfig])
-
-  // install your happs into the conductors and destructuring the returned happ data using the same
-  // array structure as you created in your installation array.
-  const [
+    const [
     [alice_sc_happ],
-  ] = await alice.installAgentsHapps(installation)
-  const [
-    [bob_sc_happ],
-  ] = await bob.installAgentsHapps(installation)
+    ] = await alice.installAgentsHapps(installation)
 
-  //Create communication
-  await alice_sc_happ.cells[0].call("social_context", "post", {dna: sample_dna_address, entry_address: sample_entry_address})
+    //Create another index for one day ago
+    var dateOffset = (24*60*60*1000) / 2; //12 hr ago
+    var date = new Date();
+    date.setTime(date.getTime() - dateOffset);
 
-  //Create second expression ref on same DNA
-  await alice_sc_happ.cells[0].call("social_context", "post", {dna: sample_dna_address, entry_address: sample_entry_address2})
+    /// SIMPLE LINK TEST
+     
+    //Test case where subject object and predicate are given
+    await alice_sc_happ.cells[0].call("social_context", "add_link",  { data: {source: "subject-full", target: "object-full", predicate: "predicate-full"},
+    author: {did: "test1", name: null, email: null}, timestamp: new Date().toISOString(), proof: {signature: "sig", key: "key"} })
 
-  //Read communications by DNA
-  const get_communications = await bob_sc_happ.cells[0].call("social_context", "read_communications", {by_dna: sample_dna_address, by_agent: null, count: 10, page: 0})
-  t.deepEqual(get_communications.length, 2)
+    //Get links on subject; expect back object & predicate
+    const subj_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: "subject-full", target: null, predicate: null, from: date.toISOString(), until: new Date().toISOString()})
+    t.deepEqual(subj_links.length, 1);
+    console.log("INT-TEST: subject links", subj_links);
 
-  //Read communications by agent
-  const get_communications_by_agent = await bob_sc_happ.cells[0].call("social_context", "read_communications", {by_dna: null, by_agent: alice_sc_happ.agent, count: 10, page: 0})
-  t.deepEqual(get_communications_by_agent.length, 2)
+    //Get links on subject & object; expect back predicate 
+    const subj_obj_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: "subject-full", target: "object-full", predicate: null, from: date.toISOString(), until: new Date().toISOString()})
+    t.deepEqual(subj_obj_links.length, 1);
+    console.log("INT-TEST: subject object links", subj_obj_links);
+
+    //Get links on object; expect back subject and predicate
+    const object_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: null, target: "object-full", predicate: null, from: date.toISOString(), until: new Date().toISOString()})
+    t.deepEqual(object_links.length, 1);
+    console.log("INT-TEST: object links", object_links);
+
+    //Get links on object & predicate; expect back subject
+    const object_pred_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: null, target: "object-full", predicate: "predicate-full", from: date.toISOString(), until: new Date().toISOString()})
+    t.deepEqual(object_pred_links.length, 1);
+    console.log("INT-TEST: object predicate links", object_pred_links)
+
+    //Get links on predicate; expect back subject and object
+    const pred_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: null, target: null, predicate: "predicate-full", from: date.toISOString(), until: new Date().toISOString()})
+    t.deepEqual(pred_links.length, 1);
+    console.log("INT-TEST: predicate links", pred_links)
 })
 
-orchestrator.registerScenario("post and read communication methods", async (s, t) => {
-  const [alice, bob] = await s.players([conductorConfig, conductorConfig])
+orchestrator.registerScenario("Subject object link test", async (s, t) => {
+    const [alice, bob] = await s.players([conductorConfig, conductorConfig])
 
-  const [
+    const [
     [alice_sc_happ],
-  ] = await alice.installAgentsHapps(installation)
-  const [
-    [bob_sc_happ],
-  ] = await bob.installAgentsHapps(installation)
+    ] = await alice.installAgentsHapps(installation)
 
-  //Create communication method 
-  await alice_sc_happ.cells[0].call("social_context", "register_communication_method", {dna_address: sample_dna_address})
+    //Create another index for one day ago
+    var dateOffset = (24*60*60*1000) / 2; //12 hr ago
+    var date = new Date();
+    date.setTime(date.getTime() - dateOffset);
 
-  const get_methods = await bob_sc_happ.cells[0].call("social_context", "get_communication_methods", {dna_address: sample_dna_address, count: 10, page: 0})
-  t.deepEqual(get_methods.length, 1)
+    //Test case where subject and object are given
+    await alice_sc_happ.cells[0].call("social_context", "add_link",  { data: {source: "subject-2", target: "Qmd6AZzLjfGWNAqWLGTGy354JC1bK26XNf7rTEEsJfv7Fe://Qmdrbjto9DDbUY8eMALPfmB35xh9m2Yce8ksk1NkMEZnQ9", predicate: null},
+    author: {did: "test1", name: null, email: null}, timestamp: new Date().toISOString(), proof: {signature: "sig", key: "key"} })
+
+    //Get links on subject; expect back object & predicate
+    const subj_links2 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: "subject-2", target: null, predicate: null, from: date.toISOString(), until: new Date().toISOString()})
+    t.deepEqual(subj_links2.length, 1);
+    console.log("INT-TEST: subject links", subj_links2);
+
+    //Get links on subject & object; expect back link 
+    const subj_obj_links2 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: "subject-2", target: "Qmd6AZzLjfGWNAqWLGTGy354JC1bK26XNf7rTEEsJfv7Fe://Qmdrbjto9DDbUY8eMALPfmB35xh9m2Yce8ksk1NkMEZnQ9", predicate: null, from: date.toISOString(), until: new Date().toISOString()})
+    t.deepEqual(subj_obj_links2.length, 1);
+    console.log("INT-TEST: subject object links", subj_obj_links2);
+
+    //Get links on object; expect back subject and predicate
+    const object_links2 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: null, target: "Qmd6AZzLjfGWNAqWLGTGy354JC1bK26XNf7rTEEsJfv7Fe://Qmdrbjto9DDbUY8eMALPfmB35xh9m2Yce8ksk1NkMEZnQ9", predicate: null, from: date.toISOString(), until: new Date().toISOString()})
+    t.deepEqual(object_links2.length, 1);
+    console.log("INT-TEST: object links", object_links2);
+
+    //Get links on object & predicate; expect back none
+    const object_pred_links2 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: null, target: "Qmd6AZzLjfGWNAqWLGTGy354JC1bK26XNf7rTEEsJfv7Fe://Qmdrbjto9DDbUY8eMALPfmB35xh9m2Yce8ksk1NkMEZnQ9", predicate: "predicate-2", from: date.toISOString(), until: new Date().toISOString()})
+    t.deepEqual(object_pred_links2.length, 0);
+    console.log("INT-TEST: object predicate links", object_pred_links2)
+
+    //Get links on predicate; expect back none
+    const pred_links2 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: null, target: null, predicate: "predicate-2", from: date.toISOString(), until: new Date().toISOString()})
+    t.deepEqual(pred_links2.length, 0);
+    console.log("INT-TEST: predicate links", pred_links2)
 })
 
-orchestrator.registerScenario("read members", async (s, t) => {
-  const [alice, bob] = await s.players([conductorConfig, conductorConfig])
+orchestrator.registerScenario("Subject predicate link test", async (s, t) => {
+    const [alice, bob] = await s.players([conductorConfig, conductorConfig])
 
-  const [
+    const [
     [alice_sc_happ],
-  ] = await alice.installAgentsHapps(installation)
-  const [
-    [bob_sc_happ],
-  ] = await bob.installAgentsHapps(installation)
+    ] = await alice.installAgentsHapps(installation)
 
-  //Do something from bob and alice. This seems to ensure that both agents have their init fn run before calling members function
-  await alice_sc_happ.cells[0].call("social_context", "post", {dna: sample_dna_address, entry_address: sample_entry_address})
-  await bob_sc_happ.cells[0].call("social_context", "post", {dna: sample_dna_address, entry_address: sample_entry_address2})
+    //Create another index for one day ago
+    var dateOffset = (24*60*60*1000) / 2; //12 hr ago
+    var date = new Date();
+    date.setTime(date.getTime() - dateOffset);
 
-  sleep(10000);
+    //Test case where subject and predicate are given
 
-  const get_members_bob2 = await bob_sc_happ.cells[0].call("social_context", "members", {count: 0, page: 0})
-  t.deepEqual(get_members_bob2.length, 2)
+    await alice_sc_happ.cells[0].call("social_context", "add_link",  { data: {source: "subject-3", target: null, predicate: "predicate-3"},
+    author: {did: "test1", name: null, email: null}, timestamp: new Date().toISOString(), proof: {signature: "sig", key: "key"} })
 
-  const get_members2 = await alice_sc_happ.cells[0].call("social_context", "members", {count: 0, page: 0})
-  t.deepEqual(get_members2.length, 2)
+    //Get links on subject
+    const subj_links3 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: "subject-3", target: null, predicate: null, from: date.toISOString(), until: new Date().toISOString()})
+    t.deepEqual(subj_links3.length, 1);
+    console.log("INT-TEST: subject links", subj_links3);
+
+    //Get links on subject & object
+    const subj_obj_links3 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: "subject-3", target: "object-3", predicate: null, from: date.toISOString(), until: new Date().toISOString()})
+    t.deepEqual(subj_obj_links3.length, 0);
+    console.log("INT-TEST: subject object links", subj_obj_links3);
+
+    //Get links on object
+    const object_links3 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: null, target: "object-3", predicate: null, from: date.toISOString(), until: new Date().toISOString()})
+    t.deepEqual(object_links3.length, 0);
+    console.log("INT-TEST: object links", object_links3);
+
+    //Get links on object & predicate
+    const object_pred_links3 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: null, target: "object-3", predicate: "predicate-3", from: date.toISOString(), until: new Date().toISOString()})
+    t.deepEqual(object_pred_links3.length, 0);
+    console.log("INT-TEST: object predicate links", object_pred_links3)
+
+    //Get links on predicate
+    const pred_links3 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: null, target: null, predicate: "predicate-3", from: date.toISOString(), until: new Date().toISOString()})
+    t.deepEqual(pred_links3.length, 1);
+    console.log("INT-TEST: predicate links", pred_links3)
+})
+
+    //Test case where object and predicate are given
+orchestrator.registerScenario("Object predicate link test", async (s, t) => {
+    const [alice, bob] = await s.players([conductorConfig, conductorConfig])
+
+    const [
+    [alice_sc_happ],
+    ] = await alice.installAgentsHapps(installation)
+
+    //Create another index for one day ago
+    var dateOffset = (24*60*60*1000) / 2; //12 hr ago
+    var date = new Date();
+    date.setTime(date.getTime() - dateOffset);
+
+    await alice_sc_happ.cells[0].call("social_context", "add_link",  { data: {source: null, target: "object-4", predicate: "predicate-4"},
+    author: {did: "test1", name: null, email: null}, timestamp: new Date().toISOString(), proof: {signature: "sig", key: "key"} })
+
+    //Get links on subject
+    const subj_links4 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: "subject-4", target: null, predicate: null, from: date.toISOString(), until: new Date().toISOString()})
+    t.deepEqual(subj_links4.length, 0);
+    console.log("INT-TEST: subject links", subj_links4);
+
+    //Get links on subject & object 
+    const subj_obj_links4 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: "subject-4", target: "object-4", predicate: null, from: date.toISOString(), until: new Date().toISOString()})
+    t.deepEqual(subj_obj_links4.length, 0);
+    console.log("INT-TEST: subject object links", subj_obj_links4);
+
+    //Get links on object
+    const object_links4 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: null, target: "object-4", predicate: null, from: date.toISOString(), until: new Date().toISOString()})
+    t.deepEqual(object_links4.length, 1);
+    console.log("INT-TEST: object links", object_links4);
+
+    //Get links on object & predicate
+    const object_pred_links4 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: null, target: "object-4", predicate: "predicate-4", from: date.toISOString(), until: new Date().toISOString()})
+    t.deepEqual(object_pred_links4.length, 1);
+    console.log("INT-TEST: object predicate links", object_pred_links4)
+
+    //Get links on predicate
+    const pred_links4 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: null, target: null, predicate: "predicate-4", from: date.toISOString(), until: new Date().toISOString()})
+    t.deepEqual(pred_links4.length, 1);
+    console.log("INT-TEST: predicate links", pred_links4)
 })
 
 // Run all registered scenarios as a final step, and gather the report,

@@ -5,10 +5,13 @@ use crate::utils::generate_link_path_permutations;
 
 impl SocialContextDNA {
     pub fn add_link(link: LinkExpression) -> ExternResult<()> {
+        debug!("Adding a link");
+        create_entry(&link)?;
         let link_indexes = generate_link_path_permutations(&link)?;
 
         for link_index in link_indexes {
             let (source, tag) = link_index;
+            debug!("Creating link index for source: {:?}", source);
             hc_time_index::index_entry(source, link.clone(), LinkTag::new(tag))?;
         }
 
