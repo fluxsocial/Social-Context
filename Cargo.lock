@@ -157,6 +157,7 @@ dependencies = [
  "mut_static",
  "permutation",
  "serde",
+ "thiserror",
 ]
 
 [[package]]
@@ -613,6 +614,7 @@ dependencies = [
  "hdk3",
  "lazy_static",
  "serde",
+ "thiserror",
 ]
 
 [[package]]

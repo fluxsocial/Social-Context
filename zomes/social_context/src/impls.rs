@@ -1,5 +1,5 @@
-use hc_time_index::IndexableEntry;
 use chrono::{DateTime, Utc};
+use hc_time_index::IndexableEntry;
 use hdk3::prelude::*;
 
 use crate::LinkExpression;

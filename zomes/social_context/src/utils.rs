@@ -1,5 +1,5 @@
-use hdk3::prelude::*;
 use crate::LinkExpression;
+use hdk3::prelude::*;
 
 pub fn generate_link_path_permutations(
     link: &LinkExpression,
