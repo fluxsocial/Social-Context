@@ -7,12 +7,11 @@ use crate::{Agent, GetLinks, LinkExpression, SocialContextDNA, UpdateLink};
 
 impl SocialContextDNA {
     pub fn add_link(link: LinkExpression) -> SocialContextResult<()> {
-        create_entry(&link)?;
         let link_indexes = generate_link_path_permutations(&link)?;
+        create_entry(&link)?;
 
         for link_index in link_indexes {
             let (source, tag) = link_index;
-            debug!("Creating link index for source: {:?}", source);
             hc_time_index::index_entry(source, link.clone(), LinkTag::new(tag))?;
         }
 
@@ -29,7 +28,7 @@ impl SocialContextDNA {
             ));
         };
 
-        let start = if get_links.triple.subject.is_some() {
+        let index = if get_links.triple.subject.is_some() {
             if get_links.triple.object.is_some() {
                 format!(
                     "{}.{}",
@@ -62,7 +61,7 @@ impl SocialContextDNA {
         Ok(hc_time_index::get_links_and_load_for_time_span::<
             LinkExpression,
         >(
-            start,
+            index,
             get_links.from,
             get_links.until,
             None,
@@ -78,7 +77,7 @@ impl SocialContextDNA {
     //Reminants of the link will still exist in the index tree as indexes are created for each element of triple.
     pub fn remove_link(link: LinkExpression) -> SocialContextResult<()> {
         let entry =
-            get(link.hash()?, GetOptions::default())?.ok_or(SocialContextError::RequestError(
+            get(link.hash()?, GetOptions::latest())?.ok_or(SocialContextError::RequestError(
                 "Could not find link expression that was requested for deletion",
             ))?;
         hc_time_index::remove_index(link.hash()?)?;
@@ -90,7 +89,7 @@ impl SocialContextDNA {
     //ideally here we could dynamically update links between source, object, predicate -> new link object where overlap occurs
     pub fn update_link(update_link: UpdateLink) -> SocialContextResult<()> {
         SocialContextDNA::remove_link(update_link.source)?;
-        SocialContextDNA::remove_link(update_link.target)?;
+        SocialContextDNA::add_link(update_link.target)?;
         Ok(())
     }
 }

@@ -1,6 +1,7 @@
 import { Orchestrator, Config, InstallAgentsHapps } from '@holochain/tryorama'
 import { TransportConfigType, ProxyAcceptConfig, ProxyConfigType } from '@holochain/tryorama'
-import { HoloHash } from '@holochain/conductor-api'
+import { HoloHash, InstallAppRequest } from '@holochain/conductor-api'
+import * as msgpack from '@msgpack/msgpack';
 import path from 'path'
 
 // Set up a Conductor configuration using the handy `Conductor.config` helper.
@@ -29,13 +30,27 @@ const installation: InstallAgentsHapps = [
 
 const orchestrator = new Orchestrator()
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 orchestrator.registerScenario("basic link testing", async (s, t) => {
-    const [alice, bob] = await s.players([conductorConfig, conductorConfig])
+    const [alice] = await s.players([conductorConfig])
 
-    const [
-    [alice_sc_happ],
-    ] = await alice.installAgentsHapps(installation)
-
+    const req: InstallAppRequest = {
+      installed_app_id: `my_app:1234`, // my_app with some unique installed id value
+      agent_key: await alice.adminWs().generateAgentPubKey(),
+      dnas: [{
+        path: path.join(__dirname, '../../social-context.dna.gz'),
+        nick: `my_cell_nick`,
+        properties: {
+          "enforce_spam_limit": 20,
+          "max_chunk_interval": 100000
+        },
+        //membrane_proof: Array.from(msgpack.encode({role:"steward", signature:"..."})),
+      }]
+    }
+    const alice_sc_happ = await alice._installHapp(req)
     //Create another index for one day ago
     var dateOffset = (24*60*60*1000) / 2; //12 hr ago
     var date = new Date();
@@ -79,12 +94,22 @@ orchestrator.registerScenario("basic link testing", async (s, t) => {
 })
 
 orchestrator.registerScenario("Subject object link test", async (s, t) => {
-    const [alice, bob] = await s.players([conductorConfig, conductorConfig])
+    const [alice] = await s.players([conductorConfig])
 
-    const [
-    [alice_sc_happ],
-    ] = await alice.installAgentsHapps(installation)
-
+    const req: InstallAppRequest = {
+      installed_app_id: `my_app:1234`, // my_app with some unique installed id value
+      agent_key: await alice.adminWs().generateAgentPubKey(),
+      dnas: [{
+        path: path.join(__dirname, '../../social-context.dna.gz'),
+        nick: `my_cell_nick`,
+        properties: {
+          "enforce_spam_limit": 20,
+          "max_chunk_interval": 100000
+        },
+        //membrane_proof: Array.from(msgpack.encode({role:"steward", signature:"..."})),
+      }]
+    }
+    const alice_sc_happ = await alice._installHapp(req)
     //Create another index for one day ago
     var dateOffset = (24*60*60*1000) / 2; //12 hr ago
     var date = new Date();
@@ -126,12 +151,22 @@ orchestrator.registerScenario("Subject object link test", async (s, t) => {
 })
 
 orchestrator.registerScenario("Subject predicate link test", async (s, t) => {
-    const [alice, bob] = await s.players([conductorConfig, conductorConfig])
+    const [alice] = await s.players([conductorConfig])
 
-    const [
-    [alice_sc_happ],
-    ] = await alice.installAgentsHapps(installation)
-
+    const req: InstallAppRequest = {
+      installed_app_id: `my_app:1234`, // my_app with some unique installed id value
+      agent_key: await alice.adminWs().generateAgentPubKey(),
+      dnas: [{
+        path: path.join(__dirname, '../../social-context.dna.gz'),
+        nick: `my_cell_nick`,
+        properties: {
+          "enforce_spam_limit": 20,
+          "max_chunk_interval": 100000
+        },
+        //membrane_proof: Array.from(msgpack.encode({role:"steward", signature:"..."})),
+      }]
+    }
+    const alice_sc_happ = await alice._installHapp(req)
     //Create another index for one day ago
     var dateOffset = (24*60*60*1000) / 2; //12 hr ago
     var date = new Date();
@@ -174,50 +209,48 @@ orchestrator.registerScenario("Subject predicate link test", async (s, t) => {
 })
 
     //Test case where object and predicate are given
-orchestrator.registerScenario("Object predicate link test", async (s, t) => {
-    const [alice, bob] = await s.players([conductorConfig, conductorConfig])
+orchestrator.registerScenario("Link delete", async (s, t) => {
+    const [alice] = await s.players([conductorConfig])
 
-    const [
-    [alice_sc_happ],
-    ] = await alice.installAgentsHapps(installation)
+    const req: InstallAppRequest = {
+      installed_app_id: `my_app:1234`, // my_app with some unique installed id value
+      agent_key: await alice.adminWs().generateAgentPubKey(),
+      dnas: [{
+        path: path.join(__dirname, '../../social-context.dna.gz'),
+        nick: `my_cell_nick`,
+        properties: {
+          "enforce_spam_limit": 20,
+          "max_chunk_interval": 100000
+        },
+        //membrane_proof: Array.from(msgpack.encode({role:"steward", signature:"..."})),
+      }]
+    }
+    const alice_sc_happ = await alice._installHapp(req);
 
     //Create another index for one day ago
     var dateOffset = (24*60*60*1000) / 2; //12 hr ago
     var date = new Date();
     date.setTime(date.getTime() - dateOffset);
 
-    await alice_sc_happ.cells[0].call("social_context", "add_link",  { data: {source: null, target: "object-4", predicate: "predicate-4"},
-    author: {did: "test1", name: null, email: null}, timestamp: new Date().toISOString(), proof: {signature: "sig", key: "key"} })
+    let link_data = { data: {source: "subject-full", target: "object-full", predicate: "predicate-full"},
+    author: {did: "test1", name: null, email: null}, timestamp: new Date().toISOString(), proof: {signature: "sig", key: "key"} };
 
-    //Get links on subject
-    const subj_links4 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
-      {source: "subject-4", target: null, predicate: null, from: date.toISOString(), until: new Date().toISOString()})
-    t.deepEqual(subj_links4.length, 0);
-    console.log("INT-TEST: subject links", subj_links4);
+    //Create link
+    await alice_sc_happ.cells[0].call("social_context", "add_link", link_data);
 
-    //Get links on subject & object 
-    const subj_obj_links4 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
-      {source: "subject-4", target: "object-4", predicate: null, from: date.toISOString(), until: new Date().toISOString()})
-    t.deepEqual(subj_obj_links4.length, 0);
-    console.log("INT-TEST: subject object links", subj_obj_links4);
+    console.log("Getting links");
+    const subj_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: "subject-full", target: null, predicate: null, from: date.toISOString(), until: new Date().toISOString()})
+    t.deepEqual(subj_links.length, 1);
+    
+    console.log("Removing link");
+    await alice_sc_happ.cells[0].call("social_context", "remove_link", link_data);
+    sleep(300000);
 
-    //Get links on object
-    const object_links4 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
-      {source: null, target: "object-4", predicate: null, from: date.toISOString(), until: new Date().toISOString()})
-    t.deepEqual(object_links4.length, 1);
-    console.log("INT-TEST: object links", object_links4);
-
-    //Get links on object & predicate
-    const object_pred_links4 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
-      {source: null, target: "object-4", predicate: "predicate-4", from: date.toISOString(), until: new Date().toISOString()})
-    t.deepEqual(object_pred_links4.length, 1);
-    console.log("INT-TEST: object predicate links", object_pred_links4)
-
-    //Get links on predicate
-    const pred_links4 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
-      {source: null, target: null, predicate: "predicate-4", from: date.toISOString(), until: new Date().toISOString()})
-    t.deepEqual(pred_links4.length, 1);
-    console.log("INT-TEST: predicate links", pred_links4)
+    console.log("Getting links");
+    const subj_links_pd = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: "subject-full", target: null, predicate: null, from: date.toISOString(), until: new Date().toISOString()})
+    t.deepEqual(subj_links_pd.length, 0);
 })
 
 // Run all registered scenarios as a final step, and gather the report,
