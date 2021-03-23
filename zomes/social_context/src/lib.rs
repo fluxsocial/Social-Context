@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use hdk3::prelude::*;
+use lazy_static::lazy_static;
 
 mod errors;
 mod impls;
@@ -83,3 +84,11 @@ pub fn remove_link(remove_link: LinkExpression) -> ExternResult<()> {
 }
 
 pub struct SocialContextDNA();
+
+//TODO: this should be derived from DNA properties so can be set for each social context based on projected size
+lazy_static! {
+    pub static ref ACTIVE_AGENT_DURATION: chrono::Duration = chrono::Duration::hours(2);
+    pub static ref ACTIVE_AGENT_INDEX_TAG: String = String::from("active_agent");
+    //Number of agents to send signal at once
+    pub static ref EMIT_RS_BATCH_SIZE: usize = 10;
+}

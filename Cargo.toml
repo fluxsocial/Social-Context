@@ -11,3 +11,4 @@ opt-level = "z"
 
 [patch.crates-io]
 hdk3 = { git = "https://github.com/holochain/holochain.git", rev = "fd8049a" }
+holo_hash = { git = "https://github.com/holochain/holochain.git", rev = "fd8049a" }

@@ -13,3 +13,9 @@ impl IndexableEntry for LinkExpression {
         hash_entry(self)
     }
 }
+
+impl LinkExpression {
+    pub fn get_sb(self) -> ExternResult<SerializedBytes> {
+        Ok(self.try_into()?)
+    }
+}

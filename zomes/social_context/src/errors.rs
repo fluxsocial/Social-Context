@@ -1,4 +1,5 @@
 use hdk3::prelude::*;
+//use holo_hash::error::HoloHashError;
 use std::convert::Infallible;
 
 use hc_time_index::errors::IndexError;
@@ -15,6 +16,8 @@ pub enum SocialContextError {
     AgentTag,
     #[error(transparent)]
     Wasm(#[from] WasmError),
+    // #[error(transparent)]
+    // HoloHashError(#[from] HoloHashError),
     #[error("Internal Error. Error: {0}")]
     InternalError(&'static str),
     // #[error(transparent)]

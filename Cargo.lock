@@ -612,6 +612,7 @@ dependencies = [
  "derive_more",
  "hc_time_index",
  "hdk3",
+ "holo_hash",
  "lazy_static",
  "serde",
  "thiserror",

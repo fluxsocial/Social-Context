@@ -18,3 +18,5 @@ hc_time_index = { path = "../../../time_delimited_indexing" }
 
 hdk3 = "0"
 thiserror = "*"
+
+holo_hash = "0"
