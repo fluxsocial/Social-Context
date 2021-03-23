@@ -45,7 +45,8 @@ orchestrator.registerScenario("basic link testing", async (s, t) => {
         nick: `my_cell_nick`,
         properties: {
           "enforce_spam_limit": 20,
-          "max_chunk_interval": 100000
+          "max_chunk_interval": 100000,
+          "active_agent_duration_ms": 7200
         },
         //membrane_proof: Array.from(msgpack.encode({role:"steward", signature:"..."})),
       }]
@@ -161,7 +162,8 @@ orchestrator.registerScenario("Subject predicate link test", async (s, t) => {
         nick: `my_cell_nick`,
         properties: {
           "enforce_spam_limit": 20,
-          "max_chunk_interval": 100000
+          "max_chunk_interval": 100000,
+          "active_agent_duration_ms": 7200
         },
         //membrane_proof: Array.from(msgpack.encode({role:"steward", signature:"..."})),
       }]
@@ -220,7 +222,8 @@ orchestrator.registerScenario("Link delete", async (s, t) => {
         nick: `my_cell_nick`,
         properties: {
           "enforce_spam_limit": 20,
-          "max_chunk_interval": 100000
+          "max_chunk_interval": 100000,
+          "active_agent_duration_ms": 7200
         },
         //membrane_proof: Array.from(msgpack.encode({role:"steward", signature:"..."})),
       }]

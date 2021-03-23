@@ -85,10 +85,16 @@ pub fn remove_link(remove_link: LinkExpression) -> ExternResult<()> {
 
 pub struct SocialContextDNA();
 
-//TODO: this should be derived from DNA properties so can be set for each social context based on projected size
+#[derive(Serialize, Deserialize, Debug, SerializedBytes)]
+pub struct SocialContextProperties {
+    pub active_agent_duration_s: i64
+}
+
 lazy_static! {
-    pub static ref ACTIVE_AGENT_DURATION: chrono::Duration = chrono::Duration::hours(2);
-    pub static ref ACTIVE_AGENT_INDEX_TAG: String = String::from("active_agent");
-    //Number of agents to send signal at once
-    pub static ref EMIT_RS_BATCH_SIZE: usize = 10;
+    pub static ref ACTIVE_AGENT_DURATION: chrono::Duration = {
+        let host_dna_config = zome_info().expect("Could not get zome configuration").properties;
+        let properties = SocialContextProperties::try_from(host_dna_config)
+            .expect("Could not convert zome dna properties to SocialContextProperties. Please ensure that your dna properties contains a SocialContextProperties field.");
+        chrono::Duration::seconds(properties.active_agent_duration_s)
+    };
 }

@@ -7,7 +7,6 @@ use crate::errors::{SocialContextError, SocialContextResult};
 use crate::utils::generate_link_path_permutations;
 use crate::{
     Agent, GetLinks, LinkExpression, SocialContextDNA, UpdateLink, ACTIVE_AGENT_DURATION,
-    ACTIVE_AGENT_INDEX_TAG,
 };
 
 impl SocialContextDNA {
@@ -24,7 +23,7 @@ impl SocialContextDNA {
         //NOTE: when adding a link on active_agent index it should be validated that source is active_agent and target is agent address
         //and validated that agent address is matching committing agent
         let recent_agents = hc_time_index::get_links_and_load_for_time_span::<LinkExpression>(
-            ACTIVE_AGENT_INDEX_TAG.clone(), Utc::now() - *ACTIVE_AGENT_DURATION, Utc::now(), None, None)?
+            String::from("active_agent"), Utc::now() - *ACTIVE_AGENT_DURATION, Utc::now(), None, None)?
             .into_iter()
             .map(|val| Ok(AgentPubKey::try_from(val.data.object.expect("Object for active agent subject should never be none"))?))
             .collect::<HoloHashResult<Vec<AgentPubKey>>>().expect("Unwrapping here until we upgrade holo_hash version where std err is integrated to error type");
