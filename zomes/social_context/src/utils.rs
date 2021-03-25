@@ -1,5 +1,5 @@
 use crate::LinkExpression;
-use hdk3::prelude::*;
+use hdk::prelude::*;
 
 pub fn generate_link_path_permutations(
     link: &LinkExpression,
@@ -9,7 +9,7 @@ pub fn generate_link_path_permutations(
     let wildcard = String::from("*");
 
     if num_entities == 0 {
-        Err(WasmError::Zome(String::from("Link has no entities")))
+        Err(WasmError::Host(String::from("Link has no entities")))
     } else if num_entities == 3 {
         let subject = link.data.subject.clone().unwrap();
         let object = link.data.object.clone().unwrap();

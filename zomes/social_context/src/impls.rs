@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use hc_time_index::IndexableEntry;
-use hdk3::prelude::*;
+use hdk::prelude::*;
 
 use crate::LinkExpression;
 

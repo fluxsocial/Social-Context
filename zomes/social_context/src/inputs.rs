@@ -1,5 +1,7 @@
 use chrono::{DateTime, Utc};
-use hdk3::prelude::*;
+use hdk::prelude::*;
+
+use crate::errors::{SocialContextError, SocialContextResult};
 
 #[hdk_entry(id = "acai_agent", visibility = "public")]
 #[serde(rename_all = "camelCase")]
@@ -73,7 +75,7 @@ impl std::fmt::Display for AcaiUrl {
 }
 
 impl TryFrom<String> for AcaiUrl {
-    type Error = WasmError;
+    type Error = SocialContextError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         let split: Vec<&str> = value.split("://").into_iter().collect();
@@ -88,14 +90,14 @@ impl TryFrom<String> for AcaiUrl {
                 expression: format!("{}://{}", split[1], split[2]),
             })
         } else {
-            Err(WasmError::Zome(String::from(
+            Err(SocialContextError::RequestError(
                 "Expected maximum 3 & minimum 2 segments for subject url in form lang://expression",
-            )))
+            ))
         }
     }
 }
 
-fn extract_acai_url(val: Option<String>) -> ExternResult<Option<AcaiUrl>> {
+fn extract_acai_url(val: Option<String>) -> SocialContextResult<Option<AcaiUrl>> {
     if let Some(inner_val) = val {
         let split: Vec<&str> = inner_val.split("://").into_iter().collect();
         if split.len() == 2 {
@@ -104,9 +106,9 @@ fn extract_acai_url(val: Option<String>) -> ExternResult<Option<AcaiUrl>> {
                 expression: split[1].to_owned(),
             }))
         } else {
-            Err(WasmError::Zome(String::from(
+            Err(SocialContextError::RequestError(
                 "Expected two segments for subject url in form lang://expression",
-            )))
+            ))
         }
     } else {
         Ok(None)
@@ -114,7 +116,7 @@ fn extract_acai_url(val: Option<String>) -> ExternResult<Option<AcaiUrl>> {
 }
 
 impl TryFrom<Triple> for TripleParsed {
-    type Error = WasmError;
+    type Error = SocialContextError;
 
     fn try_from(value: Triple) -> Result<Self, Self::Error> {
         Ok(TripleParsed {

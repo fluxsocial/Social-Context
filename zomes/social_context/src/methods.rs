@@ -1,6 +1,6 @@
 use chrono::Utc;
 use hc_time_index::IndexableEntry;
-use hdk3::prelude::*;
+use hdk::prelude::*;
 use holo_hash::error::HoloHashResult;
 
 use crate::errors::{SocialContextError, SocialContextResult};
