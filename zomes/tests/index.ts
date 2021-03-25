@@ -1,5 +1,5 @@
 import { Orchestrator, Config, InstallAgentsHapps } from '@holochain/tryorama'
-import { TransportConfigType, ProxyAcceptConfig, ProxyConfigType } from '@holochain/tryorama'
+import { TransportConfigType, ProxyAcceptConfig, ProxyConfigType, NetworkType } from '@holochain/tryorama'
 import { HoloHash, InstallAppRequest } from '@holochain/conductor-api'
 import * as msgpack from '@msgpack/msgpack';
 import path from 'path'
@@ -7,16 +7,29 @@ import path from 'path'
 // Set up a Conductor configuration using the handy `Conductor.config` helper.
 // Read the docs for more on configuration.
 const network = {
-    transport_pool: [{
-      type: TransportConfigType.Proxy,
-      sub_transport: {type: TransportConfigType.Quic},
-      proxy_config: {
-        type: ProxyConfigType.LocalProxyServer,
-        proxy_accept_config: ProxyAcceptConfig.AcceptAll
-      }
-    }],
-    bootstrap_service: "https://bootstrap.holo.host"
-};
+  network_type: NetworkType.QuicBootstrap,
+  transport_pool: [{
+    type: TransportConfigType.Proxy,
+    sub_transport: {type: TransportConfigType.Quic},
+    proxy_config: {
+      type: ProxyConfigType.LocalProxyServer,
+      proxy_accept_config: ProxyAcceptConfig.AcceptAll
+    }
+  }],
+  bootstrap_service: "https://bootstrap.holo.host",
+  tuning_params: {
+    gossip_loop_iteration_delay_ms: 10,
+    default_notify_remote_agent_count: 5,
+    default_notify_timeout_ms: 1000,
+    default_rpc_single_timeout_ms:  2000,
+    default_rpc_multi_remote_agent_count: 2,
+    default_rpc_multi_timeout_ms: 2000,
+    agent_info_expires_after_ms: 1000 * 60 * 20,
+    tls_in_mem_session_storage: 512,
+    proxy_keepalive_ms: 1000 * 60 * 2,
+    proxy_to_expire_ms: 1000 * 6 * 5
+  }
+}
 //const conductorConfig = Config.gen({network});
 const conductorConfig = Config.gen();
 
@@ -24,7 +37,7 @@ const installation: InstallAgentsHapps = [
   // agent 0
   [
     // happ 0
-    [path.join("../../social-context.dna.gz")]
+    [path.join("../../workdir/social-context.dna")]
   ]
 ]
 
@@ -36,22 +49,7 @@ function sleep(ms) {
 
 orchestrator.registerScenario("basic link testing", async (s, t) => {
     const [alice] = await s.players([conductorConfig])
-
-    const req: InstallAppRequest = {
-      installed_app_id: `my_app:1234`, // my_app with some unique installed id value
-      agent_key: await alice.adminWs().generateAgentPubKey(),
-      dnas: [{
-        path: path.join(__dirname, '../../social-context.dna.gz'),
-        nick: `my_cell_nick`,
-        properties: {
-          "enforce_spam_limit": 20,
-          "max_chunk_interval": 100000,
-          "active_agent_duration_ms": 7200
-        },
-        //membrane_proof: Array.from(msgpack.encode({role:"steward", signature:"..."})),
-      }]
-    }
-    const alice_sc_happ = await alice._installHapp(req)
+    const [[alice_sc_happ]] = await alice.installAgentsHapps(installation)
     //Create another index for one day ago
     var dateOffset = (24*60*60*1000) / 2; //12 hr ago
     var date = new Date();
@@ -96,21 +94,8 @@ orchestrator.registerScenario("basic link testing", async (s, t) => {
 
 orchestrator.registerScenario("Subject object link test", async (s, t) => {
     const [alice] = await s.players([conductorConfig])
+    const [[alice_sc_happ]] = await alice.installAgentsHapps(installation)
 
-    const req: InstallAppRequest = {
-      installed_app_id: `my_app:1234`, // my_app with some unique installed id value
-      agent_key: await alice.adminWs().generateAgentPubKey(),
-      dnas: [{
-        path: path.join(__dirname, '../../social-context.dna.gz'),
-        nick: `my_cell_nick`,
-        properties: {
-          "enforce_spam_limit": 20,
-          "max_chunk_interval": 100000
-        },
-        //membrane_proof: Array.from(msgpack.encode({role:"steward", signature:"..."})),
-      }]
-    }
-    const alice_sc_happ = await alice._installHapp(req)
     //Create another index for one day ago
     var dateOffset = (24*60*60*1000) / 2; //12 hr ago
     var date = new Date();
@@ -153,22 +138,8 @@ orchestrator.registerScenario("Subject object link test", async (s, t) => {
 
 orchestrator.registerScenario("Subject predicate link test", async (s, t) => {
     const [alice] = await s.players([conductorConfig])
+    const [[alice_sc_happ]] = await alice.installAgentsHapps(installation)
 
-    const req: InstallAppRequest = {
-      installed_app_id: `my_app:1234`, // my_app with some unique installed id value
-      agent_key: await alice.adminWs().generateAgentPubKey(),
-      dnas: [{
-        path: path.join(__dirname, '../../social-context.dna.gz'),
-        nick: `my_cell_nick`,
-        properties: {
-          "enforce_spam_limit": 20,
-          "max_chunk_interval": 100000,
-          "active_agent_duration_ms": 7200
-        },
-        //membrane_proof: Array.from(msgpack.encode({role:"steward", signature:"..."})),
-      }]
-    }
-    const alice_sc_happ = await alice._installHapp(req)
     //Create another index for one day ago
     var dateOffset = (24*60*60*1000) / 2; //12 hr ago
     var date = new Date();
@@ -213,22 +184,7 @@ orchestrator.registerScenario("Subject predicate link test", async (s, t) => {
     //Test case where object and predicate are given
 orchestrator.registerScenario("Link delete", async (s, t) => {
     const [alice] = await s.players([conductorConfig])
-
-    const req: InstallAppRequest = {
-      installed_app_id: `my_app:1234`, // my_app with some unique installed id value
-      agent_key: await alice.adminWs().generateAgentPubKey(),
-      dnas: [{
-        path: path.join(__dirname, '../../social-context.dna.gz'),
-        nick: `my_cell_nick`,
-        properties: {
-          "enforce_spam_limit": 20,
-          "max_chunk_interval": 100000,
-          "active_agent_duration_ms": 7200
-        },
-        //membrane_proof: Array.from(msgpack.encode({role:"steward", signature:"..."})),
-      }]
-    }
-    const alice_sc_happ = await alice._installHapp(req);
+    const [[alice_sc_happ]] = await alice.installAgentsHapps(installation)
 
     //Create another index for one day ago
     var dateOffset = (24*60*60*1000) / 2; //12 hr ago
