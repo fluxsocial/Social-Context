@@ -22,11 +22,11 @@ pub fn generate_link_path_permutations(
         out.push((predicate.clone(), wildcard.clone()));
 
         //Subject object -> * -> LinkExpression
-        out.push((format!("{}.{}", subject, object), wildcard.clone()));
+        out.push((subject.clone(), object.clone()));
         //Subject predicate -> * -> LinkExpression
-        out.push((format!("{}.{}", subject, predicate), wildcard.clone()));
+        out.push((subject, predicate.clone()));
         //Object predicate -> * -> LinkExpression
-        out.push((format!("{}.{}", object, predicate), wildcard));
+        out.push((object, predicate));
         Ok(out)
     } else if num_entities == 2 {
         if link.data.subject.is_some() {
@@ -34,7 +34,7 @@ pub fn generate_link_path_permutations(
                 let subject = link.data.subject.clone().unwrap();
                 let object = link.data.object.clone().unwrap();
                 //Subject object -> wildcard -> LinkExpression
-                out.push((format!("{}.{}", subject, object), wildcard.clone()));
+                out.push((subject.clone(), object.clone()));
 
                 //Subject -> wildcard -> LinkExpression
                 out.push((subject, wildcard.clone()));
@@ -45,7 +45,7 @@ pub fn generate_link_path_permutations(
                 let subject = link.data.subject.clone().unwrap();
                 let predicate = link.data.predicate.clone().unwrap();
                 //Subject predicate -> wildcard -> LinkExpression
-                out.push((format!("{}.{}", subject, predicate), wildcard.clone()));
+                out.push((subject.clone(), predicate.clone()));
 
                 //Subject -> wildcard -> LinkExpression
                 out.push((subject, wildcard.clone()));
@@ -57,7 +57,7 @@ pub fn generate_link_path_permutations(
             let object = link.data.object.clone().unwrap();
             let predicate = link.data.predicate.clone().unwrap();
             //Object, predicate -> wildcard -> LinkExpression
-            out.push((format!("{}.{}", object, predicate), wildcard.clone()));
+            out.push((object.clone(), predicate.clone()));
             //Object -> * -> LinkExpression
             out.push((object, wildcard.clone()));
             //Predicate -> * -> LinkExpression

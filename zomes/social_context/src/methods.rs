@@ -36,40 +36,27 @@ impl SocialContextDNA {
         let num_entities = get_links.triple.num_entities();
         if num_entities == 0 {
             return Err(SocialContextError::RequestError("Link has no entities"));
-        } else if num_entities == 3 {
-            return Err(SocialContextError::RequestError(
-                "You already have all the entities",
-            ));
         };
 
-        let index = if get_links.triple.subject.is_some() {
+        let (index, lt) = if get_links.triple.subject.is_some() {
             if get_links.triple.object.is_some() {
-                format!(
-                    "{}.{}",
-                    get_links.triple.subject.unwrap(),
-                    get_links.triple.object.unwrap()
-                )
+                (get_links.triple.subject.unwrap(),
+                    LinkTag::new(get_links.triple.object.unwrap()))
             } else if get_links.triple.predicate.is_some() {
-                format!(
-                    "{}.{}",
-                    get_links.triple.subject.unwrap(),
-                    get_links.triple.predicate.unwrap()
-                )
+                (get_links.triple.subject.unwrap(),
+                    LinkTag::new(get_links.triple.predicate.unwrap()))
             } else {
-                get_links.triple.subject.unwrap()
+                (get_links.triple.subject.unwrap(), LinkTag::new("*"))
             }
         } else if get_links.triple.object.is_some() {
             if get_links.triple.predicate.is_some() {
-                format!(
-                    "{}.{}",
-                    get_links.triple.object.unwrap(),
-                    get_links.triple.predicate.unwrap()
-                )
+                (get_links.triple.object.unwrap(),
+                    LinkTag::new(get_links.triple.predicate.unwrap()))
             } else {
-                get_links.triple.object.unwrap()
+                (get_links.triple.object.unwrap(), LinkTag::new("*"))
             }
         } else {
-            get_links.triple.predicate.unwrap()
+            (get_links.triple.predicate.unwrap(), LinkTag::new("*"))
         };
 
         Ok(hc_time_index::get_links_and_load_for_time_span::<
@@ -79,7 +66,7 @@ impl SocialContextDNA {
             get_links.from,
             get_links.until,
             None,
-            Some(LinkTag::new("*")),
+            Some(lt),
         )?)
     }
 
