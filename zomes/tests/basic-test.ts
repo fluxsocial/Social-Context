@@ -1,4 +1,4 @@
-/// This test file tests the functioning of social context w/ time index enabled & signals disabled
+/// This test file tests the functioning of the social context w/ time_index & signals disabled
 /// NOTE: if all tests are run together then some will fail
 
 import { Orchestrator, Config, InstallAgentsHapps } from '@holochain/tryorama'
@@ -10,87 +10,88 @@ import path from 'path'
 // Set up a Conductor configuration using the handy `Conductor.config` helper.
 // Read the docs for more on configuration.
 const network = {
-  network_type: NetworkType.QuicBootstrap,
-  transport_pool: [{
-    type: TransportConfigType.Proxy,
-    sub_transport: {type: TransportConfigType.Quic},
-    proxy_config: {
-      type: ProxyConfigType.LocalProxyServer,
-      proxy_accept_config: ProxyAcceptConfig.AcceptAll
+    network_type: NetworkType.QuicBootstrap,
+    transport_pool: [{
+      type: TransportConfigType.Proxy,
+      sub_transport: {type: TransportConfigType.Quic},
+      proxy_config: {
+        type: ProxyConfigType.LocalProxyServer,
+        proxy_accept_config: ProxyAcceptConfig.AcceptAll
+      }
+    }],
+    bootstrap_service: "https://bootstrap.holo.host",
+    tuning_params: {
+      gossip_loop_iteration_delay_ms: 10,
+      default_notify_remote_agent_count: 5,
+      default_notify_timeout_ms: 1000,
+      default_rpc_single_timeout_ms:  2000,
+      default_rpc_multi_remote_agent_count: 2,
+      default_rpc_multi_timeout_ms: 2000,
+      agent_info_expires_after_ms: 1000 * 60 * 20,
+      tls_in_mem_session_storage: 512,
+      proxy_keepalive_ms: 1000 * 60 * 2,
+      proxy_to_expire_ms: 1000 * 6 * 5
     }
-  }],
-  bootstrap_service: "https://bootstrap.holo.host",
-  tuning_params: {
-    gossip_loop_iteration_delay_ms: 10,
-    default_notify_remote_agent_count: 5,
-    default_notify_timeout_ms: 1000,
-    default_rpc_single_timeout_ms:  2000,
-    default_rpc_multi_remote_agent_count: 2,
-    default_rpc_multi_timeout_ms: 2000,
-    agent_info_expires_after_ms: 1000 * 60 * 20,
-    tls_in_mem_session_storage: 512,
-    proxy_keepalive_ms: 1000 * 60 * 2,
-    proxy_to_expire_ms: 1000 * 6 * 5
   }
-}
 //const conductorConfig = Config.gen({network});
 const conductorConfig = Config.gen();
 
 const installation: InstallAgentsHapps = [
-  // agent 0
-  [
+// agent 0
+[
     // happ 0
     [path.join("../../workdir/social-context.dna")]
-  ]
+]
 ]
 
 const orchestrator = new Orchestrator()
 
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 orchestrator.registerScenario("basic link testing", async (s, t) => {
     const [alice] = await s.players([conductorConfig])
     const [[alice_sc_happ]] = await alice.installAgentsHapps(installation)
-    //Create another index for one day ago
-    var dateOffset = (24*60*60*1000) / 2; //12 hr ago
-    var date = new Date();
-    date.setTime(date.getTime() - dateOffset);
 
-    /// SIMPLE LINK TEST
-     
     //Test case where subject object and predicate are given
-    await alice_sc_happ.cells[0].call("social_context", "add_link",  { link: {data: {source: "subject-full", target: "object-full", predicate: "predicate-full"},
-    author: {did: "test1", name: null, email: null}, timestamp: new Date().toISOString(), proof: {signature: "sig", key: "key"} }, index_strategy: "Full" })
+    await alice_sc_happ.cells[0].call("social_context", "add_link",  { 
+        link: {
+            data: {source: "subject-full", target: "object-full", predicate: "predicate-full"},
+            author: {did: "test1", name: null, email: null}, 
+            timestamp: new Date().toISOString(), 
+            proof: {signature: "sig", key: "key"} 
+        }, 
+        index_strategy: "Full" 
+    })
 
     //Get links on subject; expect back object & predicate
     const subj_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
-      {source: "subject-full", target: null, predicate: null, from: date.toISOString(), until: new Date().toISOString()})
+    {source: "subject-full", target: null, predicate: null, from: new Date().toISOString(), until: new Date().toISOString()})
     t.deepEqual(subj_links.length, 1);
     console.log("INT-TEST: subject links", subj_links);
 
     //Get links on subject & object; expect back predicate 
     const subj_obj_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
-      {source: "subject-full", target: "object-full", predicate: null, from: date.toISOString(), until: new Date().toISOString()})
+    {source: "subject-full", target: "object-full", predicate: null, from: new Date().toISOString(), until: new Date().toISOString()})
     t.deepEqual(subj_obj_links.length, 1);
     console.log("INT-TEST: subject object links", subj_obj_links);
 
     //Get links on object; expect back subject and predicate
     const object_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
-      {source: null, target: "object-full", predicate: null, from: date.toISOString(), until: new Date().toISOString()})
+    {source: null, target: "object-full", predicate: null, from: new Date().toISOString(), until: new Date().toISOString()})
     t.deepEqual(object_links.length, 1);
     console.log("INT-TEST: object links", object_links);
 
     //Get links on object & predicate; expect back subject
     const object_pred_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
-      {source: null, target: "object-full", predicate: "predicate-full", from: date.toISOString(), until: new Date().toISOString()})
+    {source: null, target: "object-full", predicate: "predicate-full", from: new Date().toISOString(), until: new Date().toISOString()})
     t.deepEqual(object_pred_links.length, 1);
     console.log("INT-TEST: object predicate links", object_pred_links)
 
     //Get links on predicate; expect back subject and object
     const pred_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
-      {source: null, target: null, predicate: "predicate-full", from: date.toISOString(), until: new Date().toISOString()})
+    {source: null, target: null, predicate: "predicate-full", from: new Date().toISOString(), until: new Date().toISOString()})
     t.deepEqual(pred_links.length, 1);
     console.log("INT-TEST: predicate links", pred_links)
 })
@@ -184,7 +185,7 @@ orchestrator.registerScenario("Subject predicate link test", async (s, t) => {
     console.log("INT-TEST: predicate links", pred_links3)
 })
 
-    //Test case where object and predicate are given
+//Test case where object and predicate are given
 orchestrator.registerScenario("Link delete", async (s, t) => {
     const [alice] = await s.players([conductorConfig])
     const [[alice_sc_happ]] = await alice.installAgentsHapps(installation)
@@ -194,8 +195,15 @@ orchestrator.registerScenario("Link delete", async (s, t) => {
     var date = new Date();
     date.setTime(date.getTime() - dateOffset);
 
-    let link_data = { link: { data: {source: "subject-full", target: "object-full", predicate: "predicate-full"},
-    author: {did: "test1", name: null, email: null}, timestamp: new Date().toISOString(), proof: {signature: "sig", key: "key"}}, index_strategy: "Full" };
+    let link_data = { 
+        link: { 
+            data: {source: "subject-full", target: "object-full", predicate: "predicate-full"},
+            author: {did: "test1", name: null, email: null}, 
+            timestamp: new Date().toISOString(), 
+            proof: {signature: "sig", key: "key"}
+        }, 
+        index_strategy: "Full" 
+    };
 
     //Create link
     await alice_sc_happ.cells[0].call("social_context", "add_link", link_data);
