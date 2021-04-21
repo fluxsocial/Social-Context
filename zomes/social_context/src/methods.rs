@@ -1,4 +1,4 @@
-use chrono::Utc;
+use chrono::{DateTime, NaiveDateTime, Utc};
 use hc_time_index::IndexableEntry;
 use hdk::prelude::*;
 use holo_hash::error::HoloHashResult;
@@ -6,27 +6,36 @@ use holo_hash::error::HoloHashResult;
 use crate::errors::{SocialContextError, SocialContextResult};
 use crate::utils::generate_link_path_permutations;
 use crate::{
-    AddLink, Agent, GetLinks, LinkExpression, SocialContextDNA, UpdateLink,
-    ACTIVE_AGENT_DURATION, ENABLE_SIGNALS, ENABLE_TIME_INDEX,
+    AddLink, Agent, GetLinks, LinkExpression, SocialContextDNA, UpdateLink, ACTIVE_AGENT_DURATION,
+    ENABLE_SIGNALS, ENABLE_TIME_INDEX,
 };
 
 impl SocialContextDNA {
     pub fn add_link(link: AddLink) -> SocialContextResult<()> {
+        debug!("adding link: {:#?}", link);
         let strat = link.index_strategy;
         let link = link.link;
         let link_indexes = match strat.as_ref() {
             "Full" => generate_link_path_permutations(&link)?,
             "Simple" => vec![(
-                link.data.subject.clone().ok_or(SocialContextError::RequestError(
-                    "Expected subject with simple index strategy",
-                ))?,
-                link.data.predicate.clone().ok_or(SocialContextError::RequestError(
-                    "Expected predicate with simple index strategy",
-                ))?,
+                link.data
+                    .subject
+                    .clone()
+                    .ok_or(SocialContextError::RequestError(
+                        "Expected subject with simple index strategy",
+                    ))?,
+                link.data
+                    .predicate
+                    .clone()
+                    .ok_or(SocialContextError::RequestError(
+                        "Expected predicate with simple index strategy",
+                    ))?,
             )],
-            _ => return Err(SocialContextError::RequestError(
-                "Given index strategy not supported, allowed values are Full or Simple",
-            ))
+            _ => {
+                return Err(SocialContextError::RequestError(
+                    "Given index strategy not supported, allowed values are Full or Simple",
+                ))
+            }
         };
         create_entry(&link)?;
         let link_hash = hash_entry(&link)?;
@@ -46,12 +55,30 @@ impl SocialContextDNA {
         //NOTE: when adding a link on active_agent index it should be validated that source is active_agent and target is agent address
         //and validated that agent address is matching committing agent
         if *ENABLE_SIGNALS {
+            let now = sys_time()?;
+            let now = DateTime::<Utc>::from_utc(
+                NaiveDateTime::from_timestamp(now.as_secs_f64() as i64, now.subsec_nanos()),
+                Utc,
+            );
             let recent_agents = hc_time_index::get_links_and_load_for_time_span::<LinkExpression>(
-                String::from("active_agent"), Utc::now() - *ACTIVE_AGENT_DURATION, Utc::now(), None, None)?
+                String::from("active_agent"),
+                now - *ACTIVE_AGENT_DURATION,
+                now,
+                None,
+                None,
+            )?;
+            let recent_agents = recent_agents
                 .into_iter()
-                .map(|val| Ok(AgentPubKey::try_from(val.data.object.expect("Object for active agent subject should never be none"))?))
-                .collect::<HoloHashResult<Vec<AgentPubKey>>>().expect("Unwrapping here until we upgrade holo_hash version where std err is integrated to error type");
-            remote_signal(link.get_sb()?, recent_agents)?;
+                .map(|val| {
+                    debug!("Found link expression: {:#?}", val);
+                    Ok(AgentPubKey::from_raw_39(
+                        hex::decode(val.data
+                            .object
+                            .expect("Object for active agent subject should never be none")).expect("decode failed"),
+                    )?)
+                })
+                .collect::<HoloHashResult<Vec<AgentPubKey>>>();
+            remote_signal(link.get_sb()?, recent_agents?)?;
         };
 
         Ok(())
@@ -168,7 +195,7 @@ impl SocialContextDNA {
         SocialContextDNA::remove_link(update_link.source)?;
         SocialContextDNA::add_link(AddLink {
             link: update_link.target,
-            index_strategy: String::from("Full")
+            index_strategy: String::from("Full"),
         })?;
         Ok(())
     }
