@@ -24,11 +24,7 @@ pub struct LinkExpression {
 
 #[hdk_extern]
 fn entry_defs(_: ()) -> ExternResult<EntryDefsCallbackResult> {
-    Ok(vec![
-        Path::entry_def(),
-        LinkExpression::entry_def()
-    ]
-    .into())
+    Ok(vec![Path::entry_def(), LinkExpression::entry_def()].into())
 }
 
 #[hdk_extern]
@@ -43,8 +39,8 @@ fn recv_remote_signal(signal: SerializedBytes) -> ExternResult<()> {
 }
 
 #[hdk_extern]
-pub fn add_link(link: LinkExpression) -> ExternResult<()> {
-    SocialContextDNA::add_link(link).map_err(|err| WasmError::Host(err.to_string()))
+pub fn add_link(add_link_data: AddLink) -> ExternResult<()> {
+    SocialContextDNA::add_link(add_link_data).map_err(|err| WasmError::Host(err.to_string()))
 }
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
@@ -87,14 +83,35 @@ pub struct SocialContextDNA();
 
 #[derive(Serialize, Deserialize, Debug, SerializedBytes)]
 pub struct SocialContextProperties {
-    pub active_agent_duration_s: i64
+    pub active_agent_duration_s: i64,
+    pub enable_signals: bool,
+    pub enable_time_index: bool,
 }
 
 lazy_static! {
     pub static ref ACTIVE_AGENT_DURATION: chrono::Duration = {
-        let host_dna_config = zome_info().expect("Could not get zome configuration").properties;
+        let host_dna_config = zome_info()
+            .expect("Could not get zome configuration")
+            .properties;
         let properties = SocialContextProperties::try_from(host_dna_config)
             .expect("Could not convert zome dna properties to SocialContextProperties. Please ensure that your dna properties contains a SocialContextProperties field.");
         chrono::Duration::seconds(properties.active_agent_duration_s)
+    };
+    pub static ref ENABLE_SIGNALS: bool = {
+        let host_dna_config = zome_info()
+            .expect("Could not get zome configuration")
+            .properties;
+        let properties = SocialContextProperties::try_from(host_dna_config)
+            .expect("Could not convert zome dna properties to SocialContextProperties. Please ensure that your dna properties contains a SocialContextProperties field.");
+        properties.enable_signals
+    };
+    pub static ref ENABLE_TIME_INDEX: bool = {
+        let host_dna_config = zome_info()
+            .expect("Could not get zome configuration")
+            .properties;
+        let properties = SocialContextProperties::try_from(host_dna_config)
+            .expect("Could not convert zome dna properties to SocialContextProperties. Please ensure that your dna properties contains a SocialContextProperties field.");
+        debug!("got props: {:#?}", properties);
+        properties.enable_time_index
     };
 }

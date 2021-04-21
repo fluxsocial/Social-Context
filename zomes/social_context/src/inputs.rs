@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use hdk::prelude::*;
 
 use crate::errors::{SocialContextError, SocialContextResult};
+use crate::LinkExpression;
 
 #[hdk_entry(id = "acai_agent", visibility = "public")]
 #[serde(rename_all = "camelCase")]
@@ -33,6 +34,18 @@ pub struct GetLinks {
     pub triple: Triple,
     pub from: DateTime<Utc>,
     pub until: DateTime<Utc>,
+}
+
+// #[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
+// pub enum IndexStrategy {
+//     Full,
+//     Simple,
+// }
+
+#[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
+pub struct AddLink {
+    pub link: LinkExpression,
+    pub index_strategy: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
