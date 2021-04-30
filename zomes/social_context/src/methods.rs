@@ -40,17 +40,6 @@ impl SocialContextDNA {
         create_entry(&link)?;
         let link_hash = hash_entry(&link)?;
 
-        for link_index in link_indexes {
-            let (source, tag) = link_index;
-            if *ENABLE_TIME_INDEX {
-                hc_time_index::index_entry(source, link.clone(), LinkTag::new(tag))?;
-            } else {
-                let path_source = Path::from(source);
-                path_source.ensure()?;
-                create_link(path_source.hash()?, link_hash.clone(), LinkTag::new(tag))?;
-            };
-        }
-
         //Here we should get link on some "active_agent" index so we can find active agents and try to emit_signal
         //NOTE: when adding a link on active_agent index it should be validated that source is active_agent and target is agent address
         //and validated that agent address is matching committing agent
@@ -78,8 +67,19 @@ impl SocialContextDNA {
                     )?)
                 })
                 .collect::<HoloHashResult<Vec<AgentPubKey>>>();
-            remote_signal(link.get_sb()?, recent_agents?)?;
+            remote_signal(link.clone().get_sb()?, recent_agents?)?;
         };
+
+        for link_index in link_indexes {
+            let (source, tag) = link_index;
+            if *ENABLE_TIME_INDEX {
+                hc_time_index::index_entry(source, link.clone(), LinkTag::new(tag))?;
+            } else {
+                let path_source = Path::from(source);
+                path_source.ensure()?;
+                create_link(path_source.hash()?, link_hash.clone(), LinkTag::new(tag))?;
+            };
+        }
 
         Ok(())
     }
