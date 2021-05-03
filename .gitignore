@@ -4,3 +4,7 @@ target/
 .hc
 .cargo
 *.log
+
+*.js
+*.js.map
+build
