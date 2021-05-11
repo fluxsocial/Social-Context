@@ -12,9 +12,76 @@ use crate::{
 
 impl SocialContextDNA {
     pub fn add_link(link: AddLink) -> SocialContextResult<()> {
-        debug!("adding link: {:#?}", link);
+        let link = link.link;
+        create_entry(&link)?;
+
+        //Here we should get link on some "active_agent" index so we can find active agents and try to emit_signal
+        //NOTE: when adding a link on active_agent index it should be validated that source is active_agent and target is agent address
+        //and validated that agent address is matching committing agent
+        if *ENABLE_SIGNALS {
+            let now = sys_time()?;
+            let now = DateTime::<Utc>::from_utc(
+                NaiveDateTime::from_timestamp(now.as_secs_f64() as i64, now.subsec_nanos()),
+                Utc,
+            );
+            let recent_agents = if *ENABLE_TIME_INDEX {
+                hc_time_index::get_links_and_load_for_time_span::<LinkExpression>(
+                    String::from("active_agent"),
+                    now - *ACTIVE_AGENT_DURATION,
+                    now,
+                    None,
+                    None,
+                )?
+            } else {
+                hdk::link::get_links(Path::from(String::from("active_agent")).hash()?, Some(LinkTag::new("*")))?
+                .into_inner()
+                .into_iter()
+                .map(|link| match get(link.target, GetOptions::latest())? {
+                    Some(chunk) => Ok(Some(
+                        chunk.entry().to_app_option::<LinkExpression>()?.ok_or(
+                            SocialContextError::InternalError(
+                                "Expected element to contain app entry data",
+                            ),
+                        )?,
+                    )),
+                    None => Ok(None),
+                })
+                .filter_map(|val| {
+                    if val.is_ok() {
+                        let val = val.unwrap();
+                        if val.is_some() {
+                            Some(Ok(val.unwrap()))
+                        } else {
+                            None
+                        }
+                    } else {
+                        Some(Err(val.err().unwrap()))
+                    }
+                })
+                .collect::<SocialContextResult<Vec<LinkExpression>>>()?
+            };
+            let recent_agents = recent_agents
+                .into_iter()
+                .map(|val| {
+                    Ok(AgentPubKey::from_raw_39(
+                        hex::decode(val.data
+                            .object
+                            .expect("Object for active agent subject should never be none")).expect("decode failed"),
+                    )?)
+                })
+                .collect::<HoloHashResult<Vec<AgentPubKey>>>();
+            debug!("Sending signal to agents: {:#?}", recent_agents);
+            remote_signal(link.clone().get_sb()?, recent_agents?)?;
+        };
+        debug!("Social-Context: Finished");
+        Ok(())
+    }
+
+    pub fn index_link(link: AddLink) -> SocialContextResult<()> {
         let strat = link.index_strategy;
         let link = link.link;
+        let link_hash = hash_entry(&link)?;
+
         let link_indexes = match strat.as_ref() {
             "Full" => generate_link_path_permutations(&link)?,
             "Simple" => vec![(
@@ -37,39 +104,8 @@ impl SocialContextDNA {
                 ))
             }
         };
-        create_entry(&link)?;
-        let link_hash = hash_entry(&link)?;
 
-        //Here we should get link on some "active_agent" index so we can find active agents and try to emit_signal
-        //NOTE: when adding a link on active_agent index it should be validated that source is active_agent and target is agent address
-        //and validated that agent address is matching committing agent
-        if *ENABLE_SIGNALS {
-            let now = sys_time()?;
-            let now = DateTime::<Utc>::from_utc(
-                NaiveDateTime::from_timestamp(now.as_secs_f64() as i64, now.subsec_nanos()),
-                Utc,
-            );
-            let recent_agents = hc_time_index::get_links_and_load_for_time_span::<LinkExpression>(
-                String::from("active_agent"),
-                now - *ACTIVE_AGENT_DURATION,
-                now,
-                None,
-                None,
-            )?;
-            let recent_agents = recent_agents
-                .into_iter()
-                .map(|val| {
-                    debug!("Found link expression: {:#?}", val);
-                    Ok(AgentPubKey::from_raw_39(
-                        hex::decode(val.data
-                            .object
-                            .expect("Object for active agent subject should never be none")).expect("decode failed"),
-                    )?)
-                })
-                .collect::<HoloHashResult<Vec<AgentPubKey>>>();
-            remote_signal(link.clone().get_sb()?, recent_agents?)?;
-        };
-
+        debug!("Social-Context: Creating link indexes");
         for link_index in link_indexes {
             let (source, tag) = link_index;
             if *ENABLE_TIME_INDEX {
@@ -80,7 +116,6 @@ impl SocialContextDNA {
                 create_link(path_source.hash()?, link_hash.clone(), LinkTag::new(tag))?;
             };
         }
-
         Ok(())
     }
 

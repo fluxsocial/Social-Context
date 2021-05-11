@@ -29,6 +29,15 @@ fn entry_defs(_: ()) -> ExternResult<EntryDefsCallbackResult> {
 
 #[hdk_extern]
 fn init(_: ()) -> ExternResult<InitCallbackResult> {
+    let mut functions: GrantedFunctions = BTreeSet::new();
+    functions.insert((zome_info()?.zome_name, "recv_remote_signal".into()));
+
+    create_cap_grant(CapGrantEntry {
+        tag: "".into(),
+        // empty access converts to unrestricted
+        access: ().into(),
+        functions,
+    })?;
     Ok(InitCallbackResult::Pass)
 }
 
@@ -41,6 +50,11 @@ fn recv_remote_signal(signal: SerializedBytes) -> ExternResult<()> {
 #[hdk_extern]
 pub fn add_link(add_link_data: AddLink) -> ExternResult<()> {
     SocialContextDNA::add_link(add_link_data).map_err(|err| WasmError::Host(err.to_string()))
+}
+
+#[hdk_extern]
+pub fn index_link(index_link_data: AddLink) -> ExternResult<()> {
+    SocialContextDNA::index_link(index_link_data).map_err(|err| WasmError::Host(err.to_string()))
 }
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
