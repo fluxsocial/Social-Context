@@ -50,20 +50,33 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+//TODO: conductor changes seems like this needs to be split up
+
 orchestrator.registerScenario("basic link testing", async (s, t) => {
     const [alice] = await s.players([conductorConfig])
     const [[alice_sc_happ]] = await alice.installAgentsHapps(installation)
 
+    let now = new Date().toISOString();
     //Test case where subject object and predicate are given
     await alice_sc_happ.cells[0].call("social_context", "add_link",  { 
         link: {
             data: {source: "subject-full", target: "object-full", predicate: "predicate-full"},
             author: {did: "test1", name: null, email: null}, 
-            timestamp: new Date().toISOString(), 
+            timestamp: now, 
             proof: {signature: "sig", key: "key"} 
         }, 
         index_strategy: "Full" 
     })
+
+    await alice_sc_happ.cells[0].call("social_context", "index_link",  { 
+      link: {
+          data: {source: "subject-full", target: "object-full", predicate: "predicate-full"},
+          author: {did: "test1", name: null, email: null}, 
+          timestamp: now, 
+          proof: {signature: "sig", key: "key"} 
+      }, 
+      index_strategy: "Full" 
+  })
 
     //Get links on subject; expect back object & predicate
     const subj_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
@@ -94,6 +107,7 @@ orchestrator.registerScenario("basic link testing", async (s, t) => {
     {source: null, target: null, predicate: "predicate-full", from: new Date().toISOString(), until: new Date().toISOString()})
     t.deepEqual(pred_links.length, 1);
     console.log("INT-TEST: predicate links", pred_links)
+    t.pass()
 })
 
 orchestrator.registerScenario("Subject object link test", async (s, t) => {
@@ -105,9 +119,13 @@ orchestrator.registerScenario("Subject object link test", async (s, t) => {
     var date = new Date();
     date.setTime(date.getTime() - dateOffset);
 
+    let now = new Date().toISOString();
     //Test case where subject and object are given
     await alice_sc_happ.cells[0].call("social_context", "add_link",  { link: { data: {source: "subject-2", target: "Qmd6AZzLjfGWNAqWLGTGy354JC1bK26XNf7rTEEsJfv7Fe://Qmdrbjto9DDbUY8eMALPfmB35xh9m2Yce8ksk1NkMEZnQ9", predicate: null},
-    author: {did: "test1", name: null, email: null}, timestamp: new Date().toISOString(), proof: {signature: "sig", key: "key"} }, index_strategy: "Full" })
+    author: {did: "test1", name: null, email: null}, timestamp: now, proof: {signature: "sig", key: "key"} }, index_strategy: "Full" })
+
+    await alice_sc_happ.cells[0].call("social_context", "index_link",  { link: { data: {source: "subject-2", target: "Qmd6AZzLjfGWNAqWLGTGy354JC1bK26XNf7rTEEsJfv7Fe://Qmdrbjto9DDbUY8eMALPfmB35xh9m2Yce8ksk1NkMEZnQ9", predicate: null},
+    author: {did: "test1", name: null, email: null}, timestamp: now, proof: {signature: "sig", key: "key"} }, index_strategy: "Full" })
 
     //Get links on subject; expect back object & predicate
     const subj_links2 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
@@ -138,6 +156,7 @@ orchestrator.registerScenario("Subject object link test", async (s, t) => {
       {source: null, target: null, predicate: "predicate-2", from: date.toISOString(), until: new Date().toISOString()})
     t.deepEqual(pred_links2.length, 0);
     console.log("INT-TEST: predicate links", pred_links2)
+    t.pass()
 })
 
 orchestrator.registerScenario("Subject predicate link test", async (s, t) => {
@@ -150,9 +169,11 @@ orchestrator.registerScenario("Subject predicate link test", async (s, t) => {
     date.setTime(date.getTime() - dateOffset);
 
     //Test case where subject and predicate are given
-
+    let now = new Date().toISOString();
     await alice_sc_happ.cells[0].call("social_context", "add_link",  { link: { data: {source: "subject-3", target: null, predicate: "predicate-3"},
-    author: {did: "test1", name: null, email: null}, timestamp: new Date().toISOString(), proof: {signature: "sig", key: "key"} }, index_strategy: "Full" })
+    author: {did: "test1", name: null, email: null}, timestamp: now, proof: {signature: "sig", key: "key"} }, index_strategy: "Full" })
+    await alice_sc_happ.cells[0].call("social_context", "index_link",  { link: { data: {source: "subject-3", target: null, predicate: "predicate-3"},
+    author: {did: "test1", name: null, email: null}, timestamp: now, proof: {signature: "sig", key: "key"} }, index_strategy: "Full" })
 
     //Get links on subject
     const subj_links3 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
@@ -183,6 +204,7 @@ orchestrator.registerScenario("Subject predicate link test", async (s, t) => {
       {source: null, target: null, predicate: "predicate-3", from: date.toISOString(), until: new Date().toISOString()})
     t.deepEqual(pred_links3.length, 1);
     console.log("INT-TEST: predicate links", pred_links3)
+    t.pass()
 })
 
 //Test case where object and predicate are given
@@ -195,11 +217,12 @@ orchestrator.registerScenario("Link delete", async (s, t) => {
     var date = new Date();
     date.setTime(date.getTime() - dateOffset);
 
+    let now = new Date().toISOString();
     let link_data = { 
         link: { 
             data: {source: "subject-full", target: "object-full", predicate: "predicate-full"},
             author: {did: "test1", name: null, email: null}, 
-            timestamp: new Date().toISOString(), 
+            timestamp: now, 
             proof: {signature: "sig", key: "key"}
         }, 
         index_strategy: "Full" 
@@ -207,6 +230,7 @@ orchestrator.registerScenario("Link delete", async (s, t) => {
 
     //Create link
     await alice_sc_happ.cells[0].call("social_context", "add_link", link_data);
+    await alice_sc_happ.cells[0].call("social_context", "index_link", link_data);
 
     console.log("Getting links");
     const subj_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
@@ -221,6 +245,7 @@ orchestrator.registerScenario("Link delete", async (s, t) => {
     const subj_links_pd = await alice_sc_happ.cells[0].call("social_context", "get_links", 
       {source: "subject-full", target: null, predicate: null, from: date.toISOString(), until: new Date().toISOString()})
     t.deepEqual(subj_links_pd.length, 0);
+    t.pass()
 })
 
 // Run all registered scenarios as a final step, and gather the report,
