@@ -42,7 +42,7 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
       "add_link",
       {
         link: data,
-        index_strategy: "Simple",
+        index_strategy: "Full",
       }
     );
     await this.#socialContextDna.call(
@@ -51,7 +51,7 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
       "index_link",
       {
         link: data,
-        index_strategy: "Simple",
+        index_strategy: "Full",
       }
     );
   }
