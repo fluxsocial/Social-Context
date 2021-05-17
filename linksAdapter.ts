@@ -36,48 +36,24 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
 
   async addLink(link: Expression): Promise<void> {
     const data = prepareExpressionLink(link);
-    //console.debug("Holochain Social Context: ADDING LINK!: ", data);
-    //If target is an agent pub key, then we are just trying mark agent as active
-    //@ts-ignore
-    if (data.data.source == "active_agent") {
-      await this.#socialContextDna.call(
-        DNA_NICK,
-        "social_context",
-        "add_link",
-        {
-          link: data,
-          index_strategy: "Simple",
-        }
-      );
-      await this.#socialContextDna.call(
-        DNA_NICK,
-        "social_context",
-        "index_link",
-        {
-          link: data,
-          index_strategy: "Simple",
-        }
-      );
-    } else {
-      await this.#socialContextDna.call(
-        DNA_NICK,
-        "social_context",
-        "add_link",
-        {
-          link: data,
-          index_strategy: "Simple",
-        }
-      );
-      await this.#socialContextDna.call(
-        DNA_NICK,
-        "social_context",
-        "index_link",
-        {
-          link: data,
-          index_strategy: "Simple",
-        }
-      );
-    }
+    await this.#socialContextDna.call(
+      DNA_NICK,
+      "social_context",
+      "add_link",
+      {
+        link: data,
+        index_strategy: "Simple",
+      }
+    );
+    await this.#socialContextDna.call(
+      DNA_NICK,
+      "social_context",
+      "index_link",
+      {
+        link: data,
+        index_strategy: "Simple",
+      }
+    );
   }
 
   async updateLink(
@@ -117,16 +93,6 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
     }
     if (link_query.predicate == undefined) {
       link_query.predicate = null;
-    }
-    if (link_query.fromDate == undefined) {
-      link_query.from = new Date().toISOString();
-    } else {
-      link_query.from = link_query.fromDate;
-    }
-    if (link_query.untilDate == undefined) {
-      link_query.until = new Date().toISOString();
-    } else {
-      link_query.until = link_query.untilDate;
     }
     const links = await this.#socialContextDna.call(
       DNA_NICK,
