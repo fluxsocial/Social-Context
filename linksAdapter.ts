@@ -10,11 +10,11 @@ import { DNA_NICK } from "./dna";
 import type { LinkQuery } from "@perspect3vism/ad4m/Links";
 
 export class JuntoSocialContextLinkAdapter implements LinksAdapter {
-  #socialContextDna: HolochainLanguageDelegate;
+  socialContextDna: HolochainLanguageDelegate;
 
   constructor(context: LanguageContext) {
     //@ts-ignore
-    this.#socialContextDna = context.Holochain as HolochainLanguageDelegate;
+    this.socialContextDna = context.Holochain as HolochainLanguageDelegate;
   }
 
   writable(): boolean {
@@ -25,8 +25,27 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
     return false;
   }
 
+  async addActiveAgentLink(hcDna: HolochainLanguageDelegate): Promise<any> {
+    if (hcDna == undefined) {
+      //@ts-ignore
+      return await this.call(
+        DNA_NICK,
+        "social_context",
+        "add_active_agent_link",
+        null
+      );
+    } else {
+      return await hcDna.call(
+        DNA_NICK,
+        "social_context",
+        "add_active_agent_link",
+        null
+      );
+    }
+  }
+
   async others(): Promise<Agent[]> {
-    return await this.#socialContextDna.call(
+    return await this.socialContextDna.call(
       DNA_NICK,
       "social_context",
       "get_others",
@@ -36,24 +55,14 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
 
   async addLink(link: Expression): Promise<void> {
     const data = prepareExpressionLink(link);
-    await this.#socialContextDna.call(
-      DNA_NICK,
-      "social_context",
-      "add_link",
-      {
-        link: data,
-        index_strategy: "Full",
-      }
-    );
-    await this.#socialContextDna.call(
-      DNA_NICK,
-      "social_context",
-      "index_link",
-      {
-        link: data,
-        index_strategy: "Full",
-      }
-    );
+    await this.socialContextDna.call(DNA_NICK, "social_context", "add_link", {
+      link: data,
+      index_strategy: "Full",
+    });
+    await this.socialContextDna.call(DNA_NICK, "social_context", "index_link", {
+      link: data,
+      index_strategy: "Full",
+    });
   }
 
   async updateLink(
@@ -62,7 +71,7 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
   ): Promise<void> {
     const source_link = prepareExpressionLink(oldLinkExpression);
     const target_link = prepareExpressionLink(newLinkExpression);
-    await this.#socialContextDna.call(
+    await this.socialContextDna.call(
       DNA_NICK,
       "social_context",
       "update_link",
@@ -72,7 +81,7 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
 
   async removeLink(link: Expression): Promise<void> {
     const data = prepareExpressionLink(link);
-    await this.#socialContextDna.call(
+    await this.socialContextDna.call(
       DNA_NICK,
       "social_context",
       "remove_link",
@@ -94,7 +103,7 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
     if (link_query.predicate == undefined) {
       link_query.predicate = null;
     }
-    const links = await this.#socialContextDna.call(
+    const links = await this.socialContextDna.call(
       DNA_NICK,
       "social_context",
       "get_links",
