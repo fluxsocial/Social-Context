@@ -92,10 +92,10 @@ impl SocialContextDNA {
             "Full" => generate_link_path_permutations(&link)?,
             "Simple" => vec![(
                 link.data
-                    .subject
+                    .source
                     .clone()
                     .ok_or(SocialContextError::RequestError(
-                        "Expected subject with simple index strategy",
+                        "Expected source with simple index strategy",
                     ))?,
                 link.data
                     .predicate
@@ -106,10 +106,10 @@ impl SocialContextDNA {
             )],
             "SimpleNoTimeIndex" => vec![(
                 link.data
-                    .subject
+                    .source
                     .clone()
                     .ok_or(SocialContextError::RequestError(
-                        "Expected subject with simple index strategy",
+                        "Expected source with simple index strategy",
                     ))?,
                 link.data
                     .predicate
@@ -150,28 +150,28 @@ impl SocialContextDNA {
             return Err(SocialContextError::RequestError("Link has no entities"));
         };
 
-        let (index, lt) = if get_links.triple.subject.is_some() {
-            if get_links.triple.object.is_some() {
+        let (index, lt) = if get_links.triple.source.is_some() {
+            if get_links.triple.target.is_some() {
                 (
-                    get_links.triple.subject.unwrap(),
-                    LinkTag::new(get_links.triple.object.unwrap()),
+                    get_links.triple.source.unwrap(),
+                    LinkTag::new(get_links.triple.target.unwrap()),
                 )
             } else if get_links.triple.predicate.is_some() {
                 (
-                    get_links.triple.subject.unwrap(),
+                    get_links.triple.source.unwrap(),
                     LinkTag::new(get_links.triple.predicate.unwrap()),
                 )
             } else {
-                (get_links.triple.subject.unwrap(), LinkTag::new("*"))
+                (get_links.triple.source.unwrap(), LinkTag::new("*"))
             }
-        } else if get_links.triple.object.is_some() {
+        } else if get_links.triple.target.is_some() {
             if get_links.triple.predicate.is_some() {
                 (
-                    get_links.triple.object.unwrap(),
+                    get_links.triple.target.unwrap(),
                     LinkTag::new(get_links.triple.predicate.unwrap()),
                 )
             } else {
-                (get_links.triple.object.unwrap(), LinkTag::new("*"))
+                (get_links.triple.target.unwrap(), LinkTag::new("*"))
             }
         } else {
             (get_links.triple.predicate.unwrap(), LinkTag::new("*"))
@@ -265,7 +265,7 @@ impl SocialContextDNA {
     }
 
     //Right now this solution is pretty basic and opts for just deleting the source link and then creating the second
-    //ideally here we could dynamically update links between source, object, predicate -> new link object where overlap occurs
+    //ideally here we could dynamically update links between source, target, predicate -> new link target where overlap occurs
     pub fn update_link(update_link: UpdateLink) -> SocialContextResult<()> {
         SocialContextDNA::remove_link(update_link.source)?;
         SocialContextDNA::add_link(AddLink {

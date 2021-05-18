@@ -11,70 +11,70 @@ pub fn generate_link_path_permutations(
     if num_entities == 0 {
         Err(WasmError::Host(String::from("Link has no entities")))
     } else if num_entities == 3 {
-        let subject = link.data.subject.clone().unwrap();
-        let object = link.data.object.clone().unwrap();
+        let source = link.data.source.clone().unwrap();
+        let target = link.data.target.clone().unwrap();
         let predicate = link.data.predicate.clone().unwrap();
-        //Subject -> * -> LinkExpression
-        out.push((subject.clone(), wildcard.clone()));
-        //Object -> * -> LinkExpression
-        out.push((object.clone(), wildcard.clone()));
+        //source -> * -> LinkExpression
+        out.push((source.clone(), wildcard.clone()));
+        //target -> * -> LinkExpression
+        out.push((target.clone(), wildcard.clone()));
         //Predicate -> * -> LinkExpression
         out.push((predicate.clone(), wildcard.clone()));
 
-        //Subject object -> * -> LinkExpression
-        out.push((subject.clone(), object.clone()));
-        //Subject predicate -> * -> LinkExpression
-        out.push((subject, predicate.clone()));
-        //Object predicate -> * -> LinkExpression
-        out.push((object, predicate));
+        //source target -> * -> LinkExpression
+        out.push((source.clone(), target.clone()));
+        //source predicate -> * -> LinkExpression
+        out.push((source, predicate.clone()));
+        //target predicate -> * -> LinkExpression
+        out.push((target, predicate));
         Ok(out)
     } else if num_entities == 2 {
-        if link.data.subject.is_some() {
-            if link.data.object.is_some() {
-                let subject = link.data.subject.clone().unwrap();
-                let object = link.data.object.clone().unwrap();
-                //Subject object -> wildcard -> LinkExpression
-                out.push((subject.clone(), object.clone()));
+        if link.data.source.is_some() {
+            if link.data.target.is_some() {
+                let source = link.data.source.clone().unwrap();
+                let target = link.data.target.clone().unwrap();
+                //source target -> wildcard -> LinkExpression
+                out.push((source.clone(), target.clone()));
 
-                //Subject -> wildcard -> LinkExpression
-                out.push((subject, wildcard.clone()));
+                //source -> wildcard -> LinkExpression
+                out.push((source, wildcard.clone()));
 
-                //Object -> wildcard -> LinkExpression
-                out.push((object, wildcard));
+                //target -> wildcard -> LinkExpression
+                out.push((target, wildcard));
             } else {
-                let subject = link.data.subject.clone().unwrap();
+                let source = link.data.source.clone().unwrap();
                 let predicate = link.data.predicate.clone().unwrap();
-                //Subject predicate -> wildcard -> LinkExpression
-                out.push((subject.clone(), predicate.clone()));
+                //source predicate -> wildcard -> LinkExpression
+                out.push((source.clone(), predicate.clone()));
 
-                //Subject -> wildcard -> LinkExpression
-                out.push((subject, wildcard.clone()));
+                //source -> wildcard -> LinkExpression
+                out.push((source, wildcard.clone()));
 
                 //Predicate -> wildcard -> LinkExpression
                 out.push((predicate, wildcard));
             };
-        } else if link.data.object.is_some() {
-            let object = link.data.object.clone().unwrap();
+        } else if link.data.target.is_some() {
+            let target = link.data.target.clone().unwrap();
             let predicate = link.data.predicate.clone().unwrap();
-            //Object, predicate -> wildcard -> LinkExpression
-            out.push((object.clone(), predicate.clone()));
-            //Object -> * -> LinkExpression
-            out.push((object, wildcard.clone()));
+            //target, predicate -> wildcard -> LinkExpression
+            out.push((target.clone(), predicate.clone()));
+            //target -> * -> LinkExpression
+            out.push((target, wildcard.clone()));
             //Predicate -> * -> LinkExpression
             out.push((predicate, wildcard));
         } else {
             unreachable!()
         };
         Ok(out)
-    } else if link.data.subject.is_some() {
-        let subject = link.data.subject.clone().unwrap();
-        //Subject -> * -> LinkExpression
-        out.push((subject, wildcard));
+    } else if link.data.source.is_some() {
+        let source = link.data.source.clone().unwrap();
+        //source -> * -> LinkExpression
+        out.push((source, wildcard));
         Ok(out)
-    } else if link.data.object.is_some() {
-        let object = link.data.object.clone().unwrap();
-        //Object -> * -> LinkExpression
-        out.push((object, wildcard));
+    } else if link.data.target.is_some() {
+        let target = link.data.target.clone().unwrap();
+        //target -> * -> LinkExpression
+        out.push((target, wildcard));
         Ok(out)
     } else {
         let predicate = link.data.predicate.clone().unwrap();
