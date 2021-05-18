@@ -33,10 +33,11 @@ impl SocialContextDNA {
                 None,
                 Some(LinkTag::new("")),
             )?;
-            let recent_agents = recent_agents
+            let mut recent_agents = recent_agents
                 .into_iter()
                 .map(|val| val.agent)
                 .collect::<Vec<AgentPubKey>>();
+            recent_agents.dedup();
             debug!("Sending signal to agents: {:#?}", recent_agents);
             remote_signal(link.clone().get_sb()?, recent_agents)?;
         };
