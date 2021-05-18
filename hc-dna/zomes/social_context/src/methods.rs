@@ -1,10 +1,12 @@
 use chrono::{DateTime, NaiveDateTime, Utc};
 use hc_time_index::IndexableEntry;
 use hdk::prelude::*;
-use holo_hash::error::HoloHashResult;
 
-use crate::errors::{SocialContextError, SocialContextResult};
 use crate::utils::generate_link_path_permutations;
+use crate::{
+    errors::{SocialContextError, SocialContextResult},
+    AgentReference,
+};
 use crate::{
     AddLink, Agent, GetLinks, LinkExpression, SocialContextDNA, UpdateLink, ACTIVE_AGENT_DURATION,
     ENABLE_SIGNALS, ENABLE_TIME_INDEX,
@@ -24,56 +26,59 @@ impl SocialContextDNA {
                 NaiveDateTime::from_timestamp(now.as_secs_f64() as i64, now.subsec_nanos()),
                 Utc,
             );
-            let recent_agents = if *ENABLE_TIME_INDEX {
-                hc_time_index::get_links_and_load_for_time_span::<LinkExpression>(
-                    String::from("active_agent"),
-                    now - *ACTIVE_AGENT_DURATION,
-                    now,
-                    None,
-                    None,
-                )?
-            } else {
-                hdk::link::get_links(Path::from(String::from("active_agent")).hash()?, Some(LinkTag::new("*")))?
-                .into_inner()
-                .into_iter()
-                .map(|link| match get(link.target, GetOptions::latest())? {
-                    Some(chunk) => Ok(Some(
-                        chunk.entry().to_app_option::<LinkExpression>()?.ok_or(
-                            SocialContextError::InternalError(
-                                "Expected element to contain app entry data",
-                            ),
-                        )?,
-                    )),
-                    None => Ok(None),
-                })
-                .filter_map(|val| {
-                    if val.is_ok() {
-                        let val = val.unwrap();
-                        if val.is_some() {
-                            Some(Ok(val.unwrap()))
-                        } else {
-                            None
-                        }
-                    } else {
-                        Some(Err(val.err().unwrap()))
-                    }
-                })
-                .collect::<SocialContextResult<Vec<LinkExpression>>>()?
-            };
+            let recent_agents = hc_time_index::get_links_and_load_for_time_span::<AgentReference>(
+                String::from("active_agent"),
+                now - *ACTIVE_AGENT_DURATION,
+                now,
+                None,
+                Some(LinkTag::new("")),
+            )?;
             let recent_agents = recent_agents
                 .into_iter()
-                .map(|val| {
-                    Ok(AgentPubKey::from_raw_39(
-                        hex::decode(val.data
-                            .object
-                            .expect("Object for active agent subject should never be none")).expect("decode failed"),
-                    )?)
-                })
-                .collect::<HoloHashResult<Vec<AgentPubKey>>>();
+                .map(|val| val.agent)
+                .collect::<Vec<AgentPubKey>>();
             debug!("Sending signal to agents: {:#?}", recent_agents);
-            remote_signal(link.clone().get_sb()?, recent_agents?)?;
+            remote_signal(link.clone().get_sb()?, recent_agents)?;
         };
-        debug!("Social-Context: Finished");
+        Ok(())
+    }
+
+    pub fn add_active_agent_link() -> SocialContextResult<()> {
+        let now = sys_time()?;
+        let now = DateTime::<Utc>::from_utc(
+            NaiveDateTime::from_timestamp(now.as_secs_f64() as i64, now.subsec_nanos()),
+            Utc,
+        );
+        let recent_agents = hc_time_index::get_links_and_load_for_time_span::<AgentReference>(
+            String::from("active_agent"),
+            now - *ACTIVE_AGENT_DURATION,
+            now,
+            None,
+            Some(LinkTag::new("")),
+        )?;
+        debug!("Got recent agents: {:#?}", recent_agents);
+        if recent_agents
+            .iter()
+            .find(|agent| {
+                agent.agent
+                    == agent_info()
+                        .expect("Could not get agent info")
+                        .agent_latest_pubkey
+            })
+            .is_none()
+        {
+            let agent_ref = AgentReference {
+                agent: agent_info()?.agent_initial_pubkey,
+                timestamp: now,
+            };
+            debug!("Adding agent ref: {:#?}", agent_ref);
+            create_entry(&agent_ref)?;
+            hc_time_index::index_entry(
+                String::from("active_agent"),
+                agent_ref,
+                LinkTag::new(""),
+            )?;
+        };
         Ok(())
     }
 
@@ -98,6 +103,20 @@ impl SocialContextDNA {
                         "Expected predicate with simple index strategy",
                     ))?,
             )],
+            "SimpleNoTimeIndex" => vec![(
+                link.data
+                    .subject
+                    .clone()
+                    .ok_or(SocialContextError::RequestError(
+                        "Expected subject with simple index strategy",
+                    ))?,
+                link.data
+                    .predicate
+                    .clone()
+                    .ok_or(SocialContextError::RequestError(
+                        "Expected predicate with simple index strategy",
+                    ))?,
+            )],
             _ => {
                 return Err(SocialContextError::RequestError(
                     "Given index strategy not supported, allowed values are Full or Simple",
@@ -105,11 +124,16 @@ impl SocialContextDNA {
             }
         };
 
-        debug!("Social-Context: Creating link indexes");
         for link_index in link_indexes {
             let (source, tag) = link_index;
             if *ENABLE_TIME_INDEX {
-                hc_time_index::index_entry(source, link.clone(), LinkTag::new(tag))?;
+                if strat != "SimpleNoTimeIndex" {
+                    hc_time_index::index_entry(source, link.clone(), LinkTag::new(tag))?;
+                } else {
+                    let path_source = Path::from(source);
+                    path_source.ensure()?;
+                    create_link(path_source.hash()?, link_hash.clone(), LinkTag::new(tag))?;
+                }
             } else {
                 let path_source = Path::from(source);
                 path_source.ensure()?;
@@ -153,39 +177,54 @@ impl SocialContextDNA {
         };
 
         if *ENABLE_TIME_INDEX {
-            Ok(hc_time_index::get_links_and_load_for_time_span::<
-                LinkExpression,
-            >(
-                index, get_links.from, get_links.until, None, Some(lt)
-            )?)
+            if get_links.from_date.is_some() && get_links.until_date.is_some() {
+                Ok(hc_time_index::get_links_and_load_for_time_span::<
+                    LinkExpression,
+                >(
+                    index,
+                    get_links.from_date.unwrap(),
+                    get_links.until_date.unwrap(),
+                    None,
+                    Some(lt),
+                )?)
+            } else {
+                SocialContextDNA::make_simple_link_query(Path::from(index).hash()?, Some(lt))
+            }
         } else {
-            Ok(hdk::link::get_links(Path::from(index).hash()?, Some(lt))?
-                .into_inner()
-                .into_iter()
-                .map(|link| match get(link.target, GetOptions::latest())? {
-                    Some(chunk) => Ok(Some(
-                        chunk.entry().to_app_option::<LinkExpression>()?.ok_or(
-                            SocialContextError::InternalError(
-                                "Expected element to contain app entry data",
-                            ),
-                        )?,
-                    )),
-                    None => Ok(None),
-                })
-                .filter_map(|val| {
-                    if val.is_ok() {
-                        let val = val.unwrap();
-                        if val.is_some() {
-                            Some(Ok(val.unwrap()))
-                        } else {
-                            None
-                        }
-                    } else {
-                        Some(Err(val.err().unwrap()))
-                    }
-                })
-                .collect::<SocialContextResult<Vec<LinkExpression>>>()?)
+            SocialContextDNA::make_simple_link_query(Path::from(index).hash()?, Some(lt))
         }
+    }
+
+    fn make_simple_link_query(
+        base: EntryHash,
+        link_tag: Option<LinkTag>,
+    ) -> SocialContextResult<Vec<LinkExpression>> {
+        Ok(hdk::link::get_links(base, link_tag)?
+            .into_inner()
+            .into_iter()
+            .map(|link| match get(link.target, GetOptions::latest())? {
+                Some(chunk) => Ok(Some(
+                    chunk.entry().to_app_option::<LinkExpression>()?.ok_or(
+                        SocialContextError::InternalError(
+                            "Expected element to contain app entry data",
+                        ),
+                    )?,
+                )),
+                None => Ok(None),
+            })
+            .filter_map(|val| {
+                if val.is_ok() {
+                    let val = val.unwrap();
+                    if val.is_some() {
+                        Some(Ok(val.unwrap()))
+                    } else {
+                        None
+                    }
+                } else {
+                    Some(Err(val.err().unwrap()))
+                }
+            })
+            .collect::<SocialContextResult<Vec<LinkExpression>>>()?)
     }
 
     pub fn get_others() -> SocialContextResult<Vec<Agent>> {

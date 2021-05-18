@@ -22,9 +22,16 @@ pub struct LinkExpression {
     pub proof: ExpressionProof,
 }
 
+#[hdk_entry(id = "agent_reference", visbility = "public")]
+#[derive(Clone)]
+pub struct AgentReference {
+    pub agent: AgentPubKey,
+    pub timestamp: DateTime<Utc>,
+}
+
 #[hdk_extern]
 fn entry_defs(_: ()) -> ExternResult<EntryDefsCallbackResult> {
-    Ok(vec![Path::entry_def(), LinkExpression::entry_def()].into())
+    Ok(vec![Path::entry_def(), LinkExpression::entry_def(), AgentReference::entry_def()].into())
 }
 
 #[hdk_extern]
@@ -55,6 +62,11 @@ pub fn add_link(add_link_data: AddLink) -> ExternResult<()> {
 #[hdk_extern]
 pub fn index_link(index_link_data: AddLink) -> ExternResult<()> {
     SocialContextDNA::index_link(index_link_data).map_err(|err| WasmError::Host(err.to_string()))
+}
+
+#[hdk_extern]
+pub fn add_active_agent_link(_: ()) -> ExternResult<()> {
+    SocialContextDNA::add_active_agent_link().map_err(|err| WasmError::Host(err.to_string()))
 }
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]

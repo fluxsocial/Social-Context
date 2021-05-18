@@ -32,8 +32,10 @@ pub struct Triple {
 pub struct GetLinks {
     #[serde(flatten)]
     pub triple: Triple,
-    pub from: DateTime<Utc>,
-    pub until: DateTime<Utc>,
+    #[serde(rename(serialize = "fromDate", deserialize = "fromDate"))]
+    pub from_date: Option<DateTime<Utc>>,
+    #[serde(rename(serialize = "untilDate", deserialize = "untilDate"))]
+    pub until_date: Option<DateTime<Utc>>,
 }
 
 // #[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]

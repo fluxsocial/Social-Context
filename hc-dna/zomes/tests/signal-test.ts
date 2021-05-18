@@ -57,34 +57,23 @@ orchestrator.registerScenario("basic link signal testing", async (s, t) => {
     var dateOffset = (24*60*60*1000) / 2; //12 hr ago
     var date = new Date();
     date.setTime(date.getTime() - dateOffset);
+    await s.shareAllNodes([alice, bob])
 
     //Register as active agent
-    await alice_sc_happ.cells[0].call("social_context", "add_link", {
-        link: {
-            data: {source: "active_agent", target: alice_sc_happ.agent.toString("hex"), predicate: "*"}, 
-            author: {did: "alice", name: null, email: null}, 
-            proof: {signature: "sig", key: "key"},
-            timestamp: new Date().toISOString()
-        },
-        index_strategy: "Simple"
-    })
+    await alice_sc_happ.cells[0].call("social_context", "add_active_agent_link", null)
 
     //Register as active agent
-    await bob_sc_happ.cells[0].call("social_context", "add_link", {
-        link: {
-            data: {source: "active_agent", target: bob_sc_happ.agent.toString("hex"), predicate: "*"}, 
-            author: {did: "bob", name: null, email: null}, 
-            proof: {signature: "sig", key: "key"},
-            timestamp: new Date().toISOString()
-        },
-        index_strategy: "Simple"
-    })
-     
+    await bob_sc_happ.cells[0].call("social_context", "add_active_agent_link", null)
+
+    //Sleep to give time for bob active agent link to arrive at alice
+    await sleep(2000)
     //Test case where subject object and predicate are given
     await alice_sc_happ.cells[0].call("social_context", "add_link",  { link: {data: {source: "subject-full", target: "object-full", predicate: "predicate-full"},
     author: {did: "test1", name: null, email: null}, timestamp: new Date().toISOString(), proof: {signature: "sig", key: "key"} }, index_strategy: "Simple" })
+    //Sleep to give time for signals to arrive
+    await sleep(2000)
 
-    t.deepEqual(aliceSignalCount, 2);
+    t.deepEqual(aliceSignalCount, 1);
     t.deepEqual(bobSignalCount, 1);
 })
 
