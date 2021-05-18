@@ -1,7 +1,6 @@
 use chrono::{DateTime, Utc};
 use hdk::prelude::*;
 
-use crate::errors::{SocialContextError, SocialContextResult};
 use crate::LinkExpression;
 
 #[hdk_entry(id = "did_agent", visibility = "public")]
@@ -35,12 +34,6 @@ pub struct GetLinks {
     #[serde(rename(serialize = "untilDate", deserialize = "untilDate"))]
     pub until_date: Option<DateTime<Utc>>,
 }
-
-// #[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
-// pub enum IndexStrategy {
-//     Full,
-//     Simple,
-// }
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
 pub struct AddLink {
