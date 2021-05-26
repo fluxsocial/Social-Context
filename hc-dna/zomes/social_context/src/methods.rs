@@ -1,5 +1,5 @@
 use chrono::{DateTime, NaiveDateTime, Utc};
-use hc_time_index::IndexableEntry;
+use hc_time_index::{IndexableEntry, SearchStrategy};
 use hdk::prelude::*;
 
 use crate::utils::generate_link_path_permutations;
@@ -30,8 +30,9 @@ impl SocialContextDNA {
                 String::from("active_agent"),
                 now - *ACTIVE_AGENT_DURATION,
                 now,
-                None,
                 Some(LinkTag::new("")),
+                SearchStrategy::Bfs,
+                None,
             )?;
             let mut recent_agents = recent_agents
                 .into_iter()
@@ -54,8 +55,9 @@ impl SocialContextDNA {
             String::from("active_agent"),
             now - *ACTIVE_AGENT_DURATION,
             now,
-            None,
             Some(LinkTag::new("")),
+            SearchStrategy::Bfs,
+            None,
         )?;
         debug!("Got recent agents: {:#?}", recent_agents);
         if recent_agents
@@ -185,8 +187,9 @@ impl SocialContextDNA {
                     index,
                     get_links.from_date.unwrap(),
                     get_links.until_date.unwrap(),
-                    None,
                     Some(lt),
+                    SearchStrategy::Dfs,
+                    Some(get_links.limit),
                 )?)
             } else {
                 SocialContextDNA::make_simple_link_query(Path::from(index).hash()?, Some(lt))

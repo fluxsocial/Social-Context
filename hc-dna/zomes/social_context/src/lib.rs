@@ -137,7 +137,6 @@ lazy_static! {
             .properties;
         let properties = SocialContextProperties::try_from(host_dna_config)
             .expect("Could not convert zome dna properties to SocialContextProperties. Please ensure that your dna properties contains a SocialContextProperties field.");
-        debug!("got props: {:#?}", properties);
         properties.enable_time_index
     };
 }
