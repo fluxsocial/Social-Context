@@ -9,6 +9,8 @@ import type { default as HolochainLanguageDelegate } from "@perspect3vism/ad4m-l
 import { DNA_NICK } from "./dna";
 import type { LinkQuery } from "@perspect3vism/ad4m/Links";
 
+const DEFAULT_GET_LINKS_LIMIT = 50;
+
 export class JuntoSocialContextLinkAdapter implements LinksAdapter {
   socialContextDna: HolochainLanguageDelegate;
 
@@ -103,6 +105,7 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
     if (link_query.predicate == undefined) {
       link_query.predicate = null;
     }
+    link_query.limit = DEFAULT_GET_LINKS_LIMIT;
     const links = await this.socialContextDna.call(
       DNA_NICK,
       "social_context",
