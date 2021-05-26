@@ -105,6 +105,12 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
     if (link_query.predicate == undefined) {
       link_query.predicate = null;
     }
+    if (link_query.fromDate) {
+      link_query.fromDate = link_query.fromDate.toISOString();
+    }
+    if (link_query.untilDate) {
+      link_query.untilDate = link_query.untilDate.toISOString();
+    }
     link_query.limit = DEFAULT_GET_LINKS_LIMIT;
     const links = await this.socialContextDna.call(
       DNA_NICK,
