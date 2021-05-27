@@ -8,3 +8,5 @@ target/
 *.js
 *.js.map
 build
+hc-dna/workdir/social-context.dna
+
