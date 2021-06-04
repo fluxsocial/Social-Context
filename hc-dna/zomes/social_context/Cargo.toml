@@ -13,10 +13,10 @@ derive_more = "0"
 serde = "1"
 lazy_static = "*"
 chrono = { version = "0.4", features=["serde"] }
-hc_time_index = { git = "https://github.com/juntofoundation/HC-Time-Chunking", branch = "main" }
+hc_time_index = { git = "https://github.com/perspect3vism/holochain-time-index", branch = "hdk-0.0.101-alpha.0" }
 #hc_time_index = { path = "../../../time_delimited_indexing" }
 thiserror = "1.0.20"
 hex = "*"
 
-hdk = { git = "https://github.com/holochain/holochain", rev = "a6ac04396" }
-holo_hash = { git = "https://github.com/holochain/holochain", rev = "a6ac04396" }
+hdk = "0.0.101-alpha.0"
+holo_hash = "0.0.2-alpha.1"
