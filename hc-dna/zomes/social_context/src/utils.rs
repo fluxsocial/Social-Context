@@ -8,6 +8,8 @@ pub fn generate_link_path_permutations(
     let mut out = vec![];
     let wildcard = String::from("*");
 
+    out.push((wildcard.clone(), wildcard.clone()));
+
     if num_entities == 0 {
         Err(WasmError::Host(String::from("Link has no entities")))
     } else if num_entities == 3 {

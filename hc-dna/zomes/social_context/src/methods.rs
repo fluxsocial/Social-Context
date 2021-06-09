@@ -147,10 +147,10 @@ impl SocialContextDNA {
     }
 
     pub fn get_links(get_links: GetLinks) -> SocialContextResult<Vec<LinkExpression>> {
-        let num_entities = get_links.triple.num_entities();
-        if num_entities == 0 {
-            return Err(SocialContextError::RequestError("Link has no entities"));
-        };
+        //let num_entities = get_links.triple.num_entities();
+        //if num_entities == 0 {
+        //    return Err(SocialContextError::RequestError("Link has no entities"));
+        //};
 
         let (index, lt) = if get_links.triple.source.is_some() {
             if get_links.triple.target.is_some() {
@@ -176,7 +176,11 @@ impl SocialContextDNA {
                 (get_links.triple.target.unwrap(), LinkTag::new("*"))
             }
         } else {
-            (get_links.triple.predicate.unwrap(), LinkTag::new("*"))
+            if get_links.triple.predicate.is_some() {
+                (get_links.triple.predicate.unwrap(), LinkTag::new("*"))
+            } else {
+                (String::from("*"), LinkTag::new("*"))
+            }
         };
 
         if *ENABLE_TIME_INDEX {

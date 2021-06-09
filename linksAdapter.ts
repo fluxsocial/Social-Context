@@ -93,9 +93,6 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
 
   async getLinks(query: LinkQuery): Promise<Expression[]> {
     const link_query = Object.assign(query);
-    if (!link_query.source) {
-      link_query.source = "root";
-    }
     if (link_query.source == undefined) {
       link_query.source = null;
     }
