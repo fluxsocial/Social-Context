@@ -13,7 +13,7 @@ derive_more = "0"
 serde = "1"
 lazy_static = "*"
 chrono = { version = "0.4", features=["serde"] }
-hc_time_index = { git = "https://github.com/juntofoundation/HC-Time-Chunking", branch = "main" }
+hc_time_index = { git = "https://github.com/juntofoundation/HC-Time-Chunking", rev = "2fd909aec1acec616465eef3a77cf4eec9d8e1e6" }
 #hc_time_index = { path = "../../../time_delimited_indexing" }
 thiserror = "1.0.20"
 hex = "*"

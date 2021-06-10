@@ -57,14 +57,7 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
 
   async addLink(link: Expression): Promise<void> {
     const data = prepareExpressionLink(link);
-    await this.socialContextDna.call(DNA_NICK, "social_context", "add_link", {
-      link: data,
-      index_strategy: "Full",
-    });
-    await this.socialContextDna.call(DNA_NICK, "social_context", "index_link", {
-      link: data,
-      index_strategy: "Full",
-    });
+    await this.socialContextDna.call(DNA_NICK, "social_context", "add_link", data);
   }
 
   async updateLink(
@@ -93,9 +86,6 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
 
   async getLinks(query: LinkQuery): Promise<Expression[]> {
     const link_query = Object.assign(query);
-    if (!link_query.source) {
-      link_query.source = "root";
-    }
     if (link_query.source == undefined) {
       link_query.source = null;
     }

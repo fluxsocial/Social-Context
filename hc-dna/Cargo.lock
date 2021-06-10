@@ -163,7 +163,7 @@ checksum = "d7afe4a420e3fe79967a00898cc1f4db7c8a49a9333a29f8a4bd76a253d5cd04"
 [[package]]
 name = "hc_time_index"
 version = "0.1.0"
-source = "git+https://github.com/juntofoundation/HC-Time-Chunking?branch=main#4f4b5215654d97b5648e3c3f32048147c6106281"
+source = "git+https://github.com/juntofoundation/HC-Time-Chunking?rev=2fd909aec1acec616465eef3a77cf4eec9d8e1e6#2fd909aec1acec616465eef3a77cf4eec9d8e1e6"
 dependencies = [
  "chrono",
  "hdk",

@@ -8,13 +8,12 @@ use crate::{
     AgentReference,
 };
 use crate::{
-    AddLink, Agent, GetLinks, LinkExpression, SocialContextDNA, UpdateLink, ACTIVE_AGENT_DURATION,
-    ENABLE_SIGNALS, ENABLE_TIME_INDEX,
+    Agent, GetLinks, LinkExpression, SocialContextDNA, UpdateLink, ACTIVE_AGENT_DURATION,
+    ENABLE_SIGNALS, ENABLE_TIME_INDEX, INDEX_STRAT, IndexStrategy
 };
 
 impl SocialContextDNA {
-    pub fn add_link(link: AddLink) -> SocialContextResult<()> {
-        let link = link.link;
+    pub fn add_link(link: LinkExpression) -> SocialContextResult<()> {
         create_entry(&link)?;
 
         //Here we should get link on some "active_agent" index so we can find active agents and try to emit_signal
@@ -42,6 +41,7 @@ impl SocialContextDNA {
             debug!("Sending signal to agents: {:#?}", recent_agents);
             remote_signal(link.clone().get_sb()?, recent_agents)?;
         };
+        SocialContextDNA::index_link(link)?;
         Ok(())
     }
 
@@ -85,58 +85,36 @@ impl SocialContextDNA {
         Ok(())
     }
 
-    pub fn index_link(link: AddLink) -> SocialContextResult<()> {
-        let strat = link.index_strategy;
-        let link = link.link;
+    pub fn index_link(link: LinkExpression) -> SocialContextResult<()> {
         let link_hash = hash_entry(&link)?;
 
-        let link_indexes = match strat.as_ref() {
-            "Full" => generate_link_path_permutations(&link)?,
-            "Simple" => vec![(
-                link.data
-                    .source
-                    .clone()
-                    .ok_or(SocialContextError::RequestError(
-                        "Expected source with simple index strategy",
-                    ))?,
-                link.data
-                    .predicate
-                    .clone()
-                    .ok_or(SocialContextError::RequestError(
-                        "Expected predicate with simple index strategy",
-                    ))?,
-            )],
-            "SimpleNoTimeIndex" => vec![(
-                link.data
-                    .source
-                    .clone()
-                    .ok_or(SocialContextError::RequestError(
-                        "Expected source with simple index strategy",
-                    ))?,
-                link.data
-                    .predicate
-                    .clone()
-                    .ok_or(SocialContextError::RequestError(
-                        "Expected predicate with simple index strategy",
-                    ))?,
-            )],
-            _ => {
-                return Err(SocialContextError::RequestError(
-                    "Given index strategy not supported, allowed values are Full or Simple",
-                ))
+        let link_indexes = match *INDEX_STRAT {
+            IndexStrategy::Full => generate_link_path_permutations(&link)?,
+            IndexStrategy::FullWithWildCard => {
+                let mut perm = generate_link_path_permutations(&link)?;
+                perm.push((String::from("*"), String::from("*")));
+                perm
             }
+            IndexStrategy::Simple => vec![(
+                link.data
+                    .source
+                    .clone()
+                    .ok_or(SocialContextError::RequestError(
+                        "Expected source with simple index strategy",
+                    ))?,
+                link.data
+                    .predicate
+                    .clone()
+                    .ok_or(SocialContextError::RequestError(
+                        "Expected predicate with simple index strategy",
+                    ))?,
+            )]
         };
 
         for link_index in link_indexes {
             let (source, tag) = link_index;
             if *ENABLE_TIME_INDEX {
-                if strat != "SimpleNoTimeIndex" {
-                    hc_time_index::index_entry(source, link.clone(), LinkTag::new(tag))?;
-                } else {
-                    let path_source = Path::from(source);
-                    path_source.ensure()?;
-                    create_link(path_source.hash()?, link_hash.clone(), LinkTag::new(tag))?;
-                }
+                hc_time_index::index_entry(source, link.clone(), LinkTag::new(tag))?;
             } else {
                 let path_source = Path::from(source);
                 path_source.ensure()?;
@@ -146,10 +124,11 @@ impl SocialContextDNA {
         Ok(())
     }
 
-    pub fn get_links(get_links: GetLinks) -> SocialContextResult<Vec<LinkExpression>> {
+    pub fn get_links(mut get_links: GetLinks) -> SocialContextResult<Vec<LinkExpression>> {
         let num_entities = get_links.triple.num_entities();
         if num_entities == 0 {
-            return Err(SocialContextError::RequestError("Link has no entities"));
+            get_links.triple.source = Some(String::from("*"));
+            get_links.triple.predicate = Some(String::from("*"));
         };
 
         let (index, lt) = if get_links.triple.source.is_some() {
@@ -192,7 +171,25 @@ impl SocialContextDNA {
                     Some(get_links.limit),
                 )?)
             } else {
-                SocialContextDNA::make_simple_link_query(Path::from(index).hash()?, Some(lt))
+                let now = sys_time()?;
+                let now = DateTime::<Utc>::from_utc(
+                    NaiveDateTime::from_timestamp(now.as_secs_f64() as i64, now.subsec_nanos()),
+                    Utc,
+                );
+                let unix = DateTime::<Utc>::from_utc(
+                    NaiveDateTime::from_timestamp(0, 0),
+                    Utc,
+                );
+                Ok(hc_time_index::get_links_and_load_for_time_span::<
+                    LinkExpression,
+                >(
+                    index,
+                    unix,
+                    now,
+                    Some(lt),
+                    SearchStrategy::Bfs,
+                    None,
+                )?)
             }
         } else {
             SocialContextDNA::make_simple_link_query(Path::from(index).hash()?, Some(lt))
@@ -271,10 +268,7 @@ impl SocialContextDNA {
     //ideally here we could dynamically update links between source, target, predicate -> new link target where overlap occurs
     pub fn update_link(update_link: UpdateLink) -> SocialContextResult<()> {
         SocialContextDNA::remove_link(update_link.source)?;
-        SocialContextDNA::add_link(AddLink {
-            link: update_link.target,
-            index_strategy: String::from("Full"),
-        })?;
+        SocialContextDNA::add_link(update_link.target)?;
         Ok(())
     }
 }
