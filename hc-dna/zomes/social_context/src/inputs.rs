@@ -1,8 +1,6 @@
 use chrono::{DateTime, Utc};
 use hdk::prelude::*;
 
-use crate::LinkExpression;
-
 #[hdk_entry(id = "did_agent", visibility = "public")]
 #[serde(rename_all = "camelCase")]
 #[derive(Clone)]
@@ -34,12 +32,6 @@ pub struct GetLinks {
     #[serde(rename(serialize = "untilDate", deserialize = "untilDate"))]
     pub until_date: Option<DateTime<Utc>>,
     pub limit: usize
-}
-
-#[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
-pub struct AddLink {
-    pub link: LinkExpression,
-    pub index_strategy: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
