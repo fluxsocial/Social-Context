@@ -247,7 +247,7 @@ checksum = "d7afe4a420e3fe79967a00898cc1f4db7c8a49a9333a29f8a4bd76a253d5cd04"
 [[package]]
 name = "hc_time_index"
 version = "0.1.0"
-source = "git+https://github.com/perspect3vism/holochain-time-index?branch=hdk-0.0.101-alpha.0#2df84ff86b91b5685e3cd6ea93f89665279ff77f"
+source = "git+https://github.com/juntofoundation/HC-Time-Chunking?branch=main#b363021fd7e947e061737a1ce22c52d396f2a06b"
 dependencies = [
  "chrono",
  "hdk",
