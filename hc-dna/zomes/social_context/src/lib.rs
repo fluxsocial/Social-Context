@@ -16,7 +16,7 @@ pub use validation::*;
 #[serde(rename_all = "camelCase")]
 #[derive(Clone)]
 pub struct LinkExpression {
-    pub author: Agent,
+    pub author: String,
     pub data: Triple,
     pub timestamp: DateTime<Utc>,
     pub proof: ExpressionProof,
@@ -65,7 +65,7 @@ pub fn add_active_agent_link(_: ()) -> ExternResult<()> {
 }
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
-pub struct GetOthers(pub Vec<Agent>);
+pub struct GetOthers(pub Vec<String>);
 
 #[hdk_extern]
 pub fn get_others(_: ()) -> ExternResult<GetOthers> {

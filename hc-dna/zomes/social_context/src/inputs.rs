@@ -1,15 +1,5 @@
 use chrono::{DateTime, Utc};
 use hdk::prelude::*;
-
-#[hdk_entry(id = "did_agent", visibility = "public")]
-#[serde(rename_all = "camelCase")]
-#[derive(Clone)]
-pub struct Agent {
-    pub did: String,
-    pub name: Option<String>,
-    pub email: Option<String>,
-}
-
 #[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
 pub struct ExpressionProof {
     pub signature: String,

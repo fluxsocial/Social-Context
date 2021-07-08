@@ -8,7 +8,7 @@ use crate::{
     AgentReference,
 };
 use crate::{
-    Agent, GetLinks, LinkExpression, SocialContextDNA, UpdateLink, ACTIVE_AGENT_DURATION,
+    GetLinks, LinkExpression, SocialContextDNA, UpdateLink, ACTIVE_AGENT_DURATION,
     ENABLE_SIGNALS, ENABLE_TIME_INDEX, INDEX_STRAT, IndexStrategy
 };
 
@@ -228,7 +228,7 @@ impl SocialContextDNA {
             .collect::<SocialContextResult<Vec<LinkExpression>>>()?)
     }
 
-    pub fn get_others() -> SocialContextResult<Vec<Agent>> {
+    pub fn get_others() -> SocialContextResult<Vec<String>> {
         Ok(vec![])
     }
 
