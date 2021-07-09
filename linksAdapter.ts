@@ -1,18 +1,12 @@
-import type Expression from "@perspect3vism/ad4m/Expression";
-import type {
-  LinksAdapter,
-  NewLinksObserver,
-} from "@perspect3vism/ad4m/Language";
-import type Agent from "@perspect3vism/ad4m/Agent";
-import type { HolochainLanguageDelegate } from "@perspect3vism/ad4m/LanguageContext";
-import type LanguageContext from "@perspect3vism/ad4m/LanguageContext";
+import { Expression, LinksAdapter, NewLinksObserver, Agent, HolochainLanguageDelegate, LanguageContext, LinkQuery, Perspective } from "@perspect3vism/ad4m";
 import { DNA_NICK } from "./dna";
-import type { LinkQuery } from "@perspect3vism/ad4m/Links";
+import { callbackify } from "util";
 
 const DEFAULT_GET_LINKS_LIMIT = 50;
 
 export class JuntoSocialContextLinkAdapter implements LinksAdapter {
   socialContextDna: HolochainLanguageDelegate;
+  linkCallback?: NewLinksObserver
 
   constructor(context: LanguageContext) {
     //@ts-ignore
@@ -46,13 +40,17 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
     }
   }
 
-  async others(): Promise<Agent[]> {
+  async others(): Promise<string[]> {
     return await this.socialContextDna.call(
       DNA_NICK,
       "social_context",
       "get_others",
       {}
     );
+  }
+
+  async render(): Promise<Perspective> {
+    return new Perspective()
   }
 
   async addLink(link: Expression): Promise<void> {
@@ -114,12 +112,15 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
   }
 
   addCallback(callback: NewLinksObserver): number {
-    return 0;
+    this.linkCallback = callback;
+    return 1;
   }
 
   handleHolochainSignal(signal: any): void {
-    //@ts-ignore
-    this.ad4mSignal(signal);
+    console.log("Social-Context got holochain link signal", signal);
+    if (this.linkCallback) {
+      this.linkCallback(signal.data, []);
+    }
   }
 }
 
