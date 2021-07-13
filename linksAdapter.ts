@@ -1,6 +1,5 @@
-import { Expression, LinksAdapter, NewLinksObserver, Agent, HolochainLanguageDelegate, LanguageContext, LinkQuery, Perspective } from "@perspect3vism/ad4m";
+import type { Expression, LinksAdapter, NewLinksObserver, HolochainLanguageDelegate, LanguageContext, LinkQuery } from "@perspect3vism/ad4m";
 import { DNA_NICK } from "./dna";
-import { callbackify } from "util";
 
 const DEFAULT_GET_LINKS_LIMIT = 50;
 
@@ -47,10 +46,6 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
       "get_others",
       {}
     );
-  }
-
-  async render(): Promise<Perspective> {
-    return new Perspective()
   }
 
   async addLink(link: Expression): Promise<void> {

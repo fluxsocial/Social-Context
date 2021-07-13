@@ -1,5 +1,5 @@
 {
-  "name": "junto-perspective",
+  "name": "social-context",
   "version": "0.0.1",
   "description": "An ACAI Language for managing a perspective on holochain",
   "main": "index.js",
@@ -13,7 +13,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@perspect3vism/ad4m": "0.1.1",
+    "@perspect3vism/ad4m": "0.1.4",
     "@perspect3vism/rollup-plugin-dna": "^0.0.2",
     "@rollup/plugin-commonjs": "^14.0.0",
     "@rollup/plugin-json": "^4.1.0",
@@ -34,6 +34,6 @@
     "typescript": "^4.2.4"
   },
   "dependencies": {
-    "async-mutex": "^0.2.4"
+    "events": "^3.3.0"
   }
 }

@@ -30,7 +30,7 @@ export default async function create(context: LanguageContext): Promise<Language
 
   return {
     name,
-    linksAdapter,
+    //linksAdapter,
     settingsUI,
     interactions,
   } as Language;
