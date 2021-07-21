@@ -12,7 +12,7 @@ echo "Create release with full index & no signals or time index..."
 
 #Get new dna.yaml with correct props & build language
 cp ./hc-dna/workdir/dna_basic_full_index.yaml ./hc-dna/workdir/dna.yaml
-cd hc-dna && build.sh
+cd ./hc-dna && ./build.sh
 cd ../
 npm run build
 
@@ -29,23 +29,23 @@ echo "Create release with Partial index (no wildcard) + signals + time index..."
 
 #Get new dna.yaml with correct props & build language
 cp ./hc-dna/workdir/dna_signals.yaml ./hc-dna/workdir/dna.yaml
-cd hc-dna && build.sh
+cd ./hc-dna && ./build.sh
 cd ../
 npm run build
 
-#Create the dna_signals release dir
-[ ! -d "./release/dna_signals" ] && mkdir "./release/dna_signals"
+#Create the signal release dir
+[ ! -d "./release/signal" ] && mkdir "./release/signal"
 
 #Copy the build files to the release dir
-cp ./build/bundle.js ./release/dna_signals/bundle.js
-cp ./hc-dna/workdir/social-context.dna ./release/dna_signals/social-context.dna
+cp ./build/bundle.js ./release/signal/bundle.js
+cp ./hc-dna/workdir/social-context.dna ./release/signal/social-context.dna
 
 
 
 echo "Create release with full index + time index but no signals..."
 
 cp ./hc-dna/workdir/dna_time_index.yaml ./hc-dna/workdir/dna.yaml
-cd hc-dna && build.sh
+cd ./hc-dna && ./build.sh
 cd ../
 npm run build
 
@@ -53,3 +53,7 @@ npm run build
 
 cp ./build/bundle.js ./release/full_time_index/bundle.js
 cp ./hc-dna/workdir/social-context.dna ./release/full_time_index/social-context.dna
+
+zip -r ./release/signal.zip ./release/signal
+zip -r ./release/full_index.zip ./release/full_index
+zip -r ./release/full_time_index.zip ./release/full_time_index
