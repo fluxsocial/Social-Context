@@ -6,9 +6,9 @@ properties: {
   "enforce_spam_limit": 20,
   "max_chunk_interval": 100000,
   "active_agent_duration_s": 300,
-  "enable_signals": true,
+  "enable_signals": false,
   "enable_time_index": true,
-  "index_strategy": "Full"
+  "index_strategy": "FullWithWildCard"
 }
 zomes: 
   - name: social_context

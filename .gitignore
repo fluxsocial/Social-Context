@@ -10,3 +10,4 @@ target/
 build
 hc-dna/workdir/social-context.dna
 
+release/*
