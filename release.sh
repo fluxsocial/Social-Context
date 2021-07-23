@@ -54,6 +54,6 @@ npm run build
 cp ./build/bundle.js ./release/full_time_index/bundle.js
 cp ./hc-dna/workdir/social-context.dna ./release/full_time_index/social-context.dna
 
-zip -r ./release/signal.zip ./release/signal
-zip -r ./release/full_index.zip ./release/full_index
-zip -r ./release/full_time_index.zip ./release/full_time_index
+cd ./release/signal && zip -j -r ../signal.zip ./* && cd -
+cd ./release/full_index && zip -j -r ../full_index.zip ./* && cd -
+cd ./release/full_time_index && zip -j -r ../full_time_index.zip ./* && cd -
