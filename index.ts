@@ -9,7 +9,7 @@ function interactions(expression: Address): Interaction[] {
 
 const activeAgentDurationSecs = 300;
 
-export const name = "social-context-channel";
+export const name = "social-context";
 
 export default async function create(context: LanguageContext): Promise<Language> {
   const Holochain = context.Holochain as HolochainLanguageDelegate;
