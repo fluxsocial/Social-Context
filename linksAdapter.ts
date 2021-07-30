@@ -112,9 +112,8 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
   }
 
   handleHolochainSignal(signal: any): void {
-    console.log("Social-Context got holochain link signal", signal);
     if (this.linkCallback) {
-      this.linkCallback(signal.data, []);
+      this.linkCallback([signal.data.payload], []);
     }
   }
 }
