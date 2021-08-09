@@ -14,7 +14,7 @@ serde = "1"
 lazy_static = "*"
 chrono = { version = "0.4", features=["serde"] }
 hc_time_index = { git = "https://github.com/juntofoundation/HC-Time-Chunking", branch = "main" }
-#hc_time_index = { path = "../../../time_delimited_indexing" }
+#hc_time_index = { path = "../../../../holochain-time-index" }
 thiserror = "1.0.20"
 hex = "*"
 
