@@ -60,14 +60,14 @@ orchestrator.registerScenario("basic link testing", async (s, t) => {
     //Test case where subject object and predicate are given
     await alice_sc_happ.cells[0].call("social_context", "add_link",  { 
             data: {source: "subject-full", target: "object-full", predicate: "predicate-full"},
-            author: {did: "test1", name: null, email: null}, 
+            author: "test1", 
             timestamp: now, 
             proof: {signature: "sig", key: "key"} 
     })
 
     await alice_sc_happ.cells[0].call("social_context", "index_link",  { 
           data: {source: "subject-full", target: "object-full", predicate: "predicate-full"},
-          author: {did: "test1", name: null, email: null}, 
+          author: "test1", 
           timestamp: now, 
           proof: {signature: "sig", key: "key"} 
   })
@@ -116,10 +116,10 @@ orchestrator.registerScenario("Subject object link test", async (s, t) => {
     let now = new Date().toISOString();
     //Test case where subject and object are given
     await alice_sc_happ.cells[0].call("social_context", "add_link",  { data: {source: "subject-2", target: "Qmd6AZzLjfGWNAqWLGTGy354JC1bK26XNf7rTEEsJfv7Fe://Qmdrbjto9DDbUY8eMALPfmB35xh9m2Yce8ksk1NkMEZnQ9", predicate: null},
-    author: {did: "test1", name: null, email: null}, timestamp: now, proof: {signature: "sig", key: "key"} })
+    author: "test1", timestamp: now, proof: {signature: "sig", key: "key"} })
 
     await alice_sc_happ.cells[0].call("social_context", "index_link",  { link: { data: {source: "subject-2", target: "Qmd6AZzLjfGWNAqWLGTGy354JC1bK26XNf7rTEEsJfv7Fe://Qmdrbjto9DDbUY8eMALPfmB35xh9m2Yce8ksk1NkMEZnQ9", predicate: null},
-    author: {did: "test1", name: null, email: null}, timestamp: now, proof: {signature: "sig", key: "key"} })
+    author: "test1", timestamp: now, proof: {signature: "sig", key: "key"} })
 
     //Get links on subject; expect back object & predicate
     const subj_links2 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
@@ -165,9 +165,9 @@ orchestrator.registerScenario("Subject predicate link test", async (s, t) => {
     //Test case where subject and predicate are given
     let now = new Date().toISOString();
     await alice_sc_happ.cells[0].call("social_context", "add_link",  { data: {source: "subject-3", target: null, predicate: "predicate-3"},
-    author: {did: "test1", name: null, email: null}, timestamp: now, proof: {signature: "sig", key: "key"} })
+    author: "test1", timestamp: now, proof: {signature: "sig", key: "key"} })
     await alice_sc_happ.cells[0].call("social_context", "index_link",  { data: {source: "subject-3", target: null, predicate: "predicate-3"},
-    author: {did: "test1", name: null, email: null}, timestamp: now, proof: {signature: "sig", key: "key"} })
+    author: "test1", timestamp: now, proof: {signature: "sig", key: "key"} })
 
     //Get links on subject
     const subj_links3 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
@@ -214,7 +214,7 @@ orchestrator.registerScenario("Link delete", async (s, t) => {
     let now = new Date().toISOString();
     let link_data = { 
             data: {source: "subject-full", target: "object-full", predicate: "predicate-full"},
-            author: {did: "test1", name: null, email: null}, 
+            author: "test1", 
             timestamp: now, 
             proof: {signature: "sig", key: "key"}
     };
