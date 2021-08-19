@@ -201,18 +201,32 @@ orchestrator.registerScenario("Link delete", async (s, t) => {
     await alice_sc_happ.cells[0].call("social_context", "add_link", link_data);
 
     console.log("Getting links");
+    
+    //Get links on subject
     const subj_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
       {source: "subject-full", target: null, predicate: null, from: date.toISOString(), until: new Date().toISOString(), limit: 10})
     t.deepEqual(subj_links.length, 1);
+
+    //Get links on subject and object  
+    const subj_obj_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: "subject-full", target: "object-full", predicate: null, from: date.toISOString(), until: new Date().toISOString(), limit: 10})
+    t.deepEqual(subj_obj_links.length, 1);
     
     console.log("Removing link");
     await alice_sc_happ.cells[0].call("social_context", "remove_link", link_data);
     await sleep(1000);
 
     console.log("Getting links");
+
+    //Get links on subject
     const subj_links_pd = await alice_sc_happ.cells[0].call("social_context", "get_links", 
       {source: "subject-full", target: null, predicate: null, from: date.toISOString(), until: new Date().toISOString(), limit: 10})
     t.deepEqual(subj_links_pd.length, 0);
+
+    //Get links on subject and object  
+    const subj_obj_links_after_rm = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+      {source: "subject-full", target: "object-full", predicate: null, from: date.toISOString(), until: new Date().toISOString(), limit: 10})
+    t.deepEqual(subj_obj_links.length, 1);
 })
 
 // Run all registered scenarios as a final step, and gather the report,
