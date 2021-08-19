@@ -105,13 +105,17 @@ impl SocialContextDNA {
         //Check the INDEX_STRATEGY defined in the DNA properties and generate appropriate number of link permutations
         //TODO: link strategy should be defined per zome call and not derived from DNA properties
         let link_indexes = match *INDEX_STRAT {
-            IndexStrategy::Full => generate_link_path_permutations(&link)?,
+            //Index strategy is full so we generate all possible indexes to fufill all query possibilities +
+            //add another wildcard index to make this discoverable when querying with no source, predicate or target 
             IndexStrategy::FullWithWildCard => {
-                let mut perm = generate_link_path_permutations(&link)?;
+                let mut perm = generate_link_path_permutations(&link.data)?;
                 let wildcard = get_wildcard();
                 perm.push(LinkPermutation::new(wildcard.to_string(), wildcard.to_string()));
                 perm
-            }
+            },
+            IndexStrategy::Full => generate_link_path_permutations(&link.data)?,
+            //Index strategy is simple so we only index using source + predicate meaning this LinkExpression will only be discoverable if a query with 
+            //source + predicate matching that of the LinkExpression
             IndexStrategy::Simple => vec![LinkPermutation::new(
                 link.data
                     .source
@@ -128,12 +132,15 @@ impl SocialContextDNA {
             )]
         };
 
+        //For each LinkPermutation index the entry
         for link_index in link_indexes {
             if *ENABLE_TIME_INDEX {
-                hc_time_index::index_entry(link_index.source, link.clone(), link_index.tag)?;
+                //Create index using hc_time_index crate and put it into a time tree to allow for retreival of links by time as well as source, predicate, target (IndexStrategy dependant)
+                hc_time_index::index_entry(link_index.root_index, link.clone(), link_index.tag)?;
             } else {
+                //Create basic index (link) which links from Path() entry -> link_index.tag -> LinkExpression 
                 let link_hash = hash_entry(&link)?;
-                let path_source = Path::from(link_index.source);
+                let path_source = Path::from(link_index.root_index);
                 path_source.ensure()?;
                 create_link(path_source.hash()?, link_hash.clone(), link_index.tag)?;
             };
@@ -142,25 +149,33 @@ impl SocialContextDNA {
     }
 
     pub fn get_links(mut get_links: GetLinks) -> SocialContextResult<Vec<LinkExpression>> {
-        let num_entities = get_links.triple.num_entities();
         let wildcard = get_wildcard();
-        if num_entities == 0 {
+        //No elements were supplied in the triple so we use wildcards as source + predicate to simulate a getAllLinks query 
+        //(note for this to work the FullWithWildCard index needs to be enabled)
+        if  get_links.triple.num_entities() == 0 {
             get_links.triple.source = Some(wildcard.to_string());
             get_links.triple.predicate = Some(wildcard.to_string());
         };
 
+        //Derive the source link index value + link tag value to query with based on the values passed in GetLinks.triple
+        //Note we are only looking for two or one elements in the triple since if you have three you already have the LinkExpression! 
         let link_query_elements = if get_links.triple.source.is_some() {
             if get_links.triple.target.is_some() {
+                //Query with source + target; will match all LinkExpression with same source + target
+                //In this case the predicate unknown here and thus the value zome caller is interested in
                 LinkPermutation::new(
                     get_links.triple.source.unwrap(),
                     get_links.triple.target.unwrap(),
                 )
             } else if get_links.triple.predicate.is_some() {
+                //Query with source + predicate
+                //Here target is unknown and thus the value the zome caller is looking for
                 LinkPermutation::new(
                     get_links.triple.source.unwrap(),
                     get_links.triple.predicate.unwrap(),
                 )
             } else {
+                //Look for all links with the given source
                 LinkPermutation::new(get_links.triple.source.unwrap(), wildcard)
             }
         } else if get_links.triple.target.is_some() {
@@ -176,12 +191,14 @@ impl SocialContextDNA {
             LinkPermutation::new(get_links.triple.predicate.unwrap(), wildcard)
         };
 
+        //TODO: this should be specified by the zome caller and not in DNA props
         if *ENABLE_TIME_INDEX {
+            //If fromDate & untilDate have been supplied then call hc_time_index looking for LinkExpression(s) in date range with given root_index + tag
             if get_links.from_date.is_some() && get_links.until_date.is_some() {
                 Ok(hc_time_index::get_links_and_load_for_time_span::<
                     LinkExpression,
                 >(
-                    link_query_elements.source,
+                    link_query_elements.root_index,
                     get_links.from_date.unwrap(),
                     get_links.until_date.unwrap(),
                     Some(link_query_elements.tag),
@@ -189,6 +206,8 @@ impl SocialContextDNA {
                     Some(get_links.limit),
                 )?)
             } else {
+                //fromDate & untilDate not supplied so we will try to get all LinkExpression(s) from now -> unix epoch
+                //This will return all links since the hc_time_index crate does not support indexing before unix epoch currently
                 let now = sys_time()?;
                 let now = DateTime::<Utc>::from_utc(
                     NaiveDateTime::from_timestamp(now.as_secs_f64() as i64, now.subsec_nanos()),
@@ -201,7 +220,7 @@ impl SocialContextDNA {
                 Ok(hc_time_index::get_links_and_load_for_time_span::<
                     LinkExpression,
                 >(
-                    link_query_elements.source,
+                    link_query_elements.root_index,
                     unix,
                     now,
                     Some(link_query_elements.tag),
@@ -210,7 +229,8 @@ impl SocialContextDNA {
                 )?)
             }
         } else {
-            SocialContextDNA::make_simple_link_query(Path::from(link_query_elements.source).hash()?, Some(link_query_elements.tag))
+            //Time index not enabled so just make a simple query
+            SocialContextDNA::make_simple_link_query(Path::from(link_query_elements.root_index).hash()?, Some(link_query_elements.tag))
         }
     }
 
@@ -250,22 +270,23 @@ impl SocialContextDNA {
         Ok(vec![])
     }
 
-    //Pretty basic delete as it just removes link from index tree and then removes entry itself.
-    //Remnants of the link will still exist in the index tree as indexes are created for each element of triple.
-    //TODO: need another method on time_index where we can delete from index where target entry of index == some value
     pub fn remove_link(link: LinkExpression) -> SocialContextResult<()> {
+        //Get the LinkExpression entry to be deleted
         let entry =
             get(link.hash()?, GetOptions::latest())?.ok_or(SocialContextError::RequestError(
                 "Could not find link expression that was requested for deletion",
             ))?;
 
         if *ENABLE_TIME_INDEX {
+            //TODO: check that the deletion here is exhastive and deletes all index permutations
             hc_time_index::remove_index(link.hash()?)?;
         } else {
-            let link_indexes = generate_link_path_permutations(&link)?;
+            //Generate the link indexes that are possible for this LinkExpression
+            let link_indexes = generate_link_path_permutations(&link.data)?;
             let link_hash = link.hash()?;
+            //For each permutation get links on source and if exists then delete where target of link == target LinkExpression to be deleted
             for link_index in link_indexes {
-                let path_source = Path::from(link_index.source);
+                let path_source = Path::from(link_index.root_index);
                 hdk::link::get_links(path_source.hash()?, Some(link_index.tag))?
                     .into_inner()
                     .into_iter()
@@ -281,8 +302,6 @@ impl SocialContextDNA {
         Ok(())
     }
 
-    //Right now this solution is pretty basic and opts for just deleting the source link and then creating the second
-    //ideally here we could dynamically update links between source, target, predicate -> new link target where overlap occurs
     pub fn update_link(update_link: UpdateLink) -> SocialContextResult<()> {
         SocialContextDNA::remove_link(update_link.source)?;
         SocialContextDNA::add_link(update_link.target)?;
