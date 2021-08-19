@@ -3,28 +3,25 @@ use hc_time_index::{IndexableEntry, SearchStrategy};
 use hdk::prelude::*;
 
 use crate::utils::generate_link_path_permutations;
-use crate::{
-    errors::{SocialContextError, SocialContextResult},
-    AgentReference,
-};
+use crate::errors::{SocialContextError, SocialContextResult};
 use crate::{
     GetLinks, LinkExpression, SocialContextDNA, UpdateLink, ACTIVE_AGENT_DURATION,
-    ENABLE_SIGNALS, ENABLE_TIME_INDEX, INDEX_STRAT, IndexStrategy
+    ENABLE_SIGNALS, ENABLE_TIME_INDEX, INDEX_STRAT, IndexStrategy, get_wildcard, AgentReference
 };
 
 impl SocialContextDNA {
     pub fn add_link(link: LinkExpression) -> SocialContextResult<()> {
+        //Create the LinkExpression entry
         create_entry(&link)?;
 
-        //Here we should get link on some "active_agent" index so we can find active agents and try to emit_signal
-        //NOTE: when adding a link on active_agent index it should be validated that source is active_agent and target is agent address
-        //and validated that agent address is matching committing agent
+        //If signals are enabled from the dna properties
         if *ENABLE_SIGNALS {
             let now = sys_time()?;
             let now = DateTime::<Utc>::from_utc(
                 NaiveDateTime::from_timestamp(now.as_secs_f64() as i64, now.subsec_nanos()),
                 Utc,
             );
+            //Get recent agents (agents which have marked themselves online in time period now -> ACTIVE_AGENT_DURATION as derived from DNA properties)
             let recent_agents = hc_time_index::get_links_and_load_for_time_span::<AgentReference>(
                 String::from("active_agent"),
                 now - *ACTIVE_AGENT_DURATION,
@@ -38,19 +35,21 @@ impl SocialContextDNA {
                 .map(|val| val.agent)
                 .collect::<Vec<AgentPubKey>>();
             recent_agents.dedup();
-            debug!("Sending signal to agents: {:#?}", recent_agents);
+            debug!("Social-Context.add_link: Sending signal to agents: {:#?}", recent_agents);
             remote_signal(link.clone().get_sb()?, recent_agents)?;
         };
+        //Index the LinkExpression so its discoverable by source, predicate, target queries
         SocialContextDNA::index_link(link)?;
         Ok(())
     }
 
-    pub fn add_active_agent_link() -> SocialContextResult<()> {
+    pub fn add_active_agent_link() -> SocialContextResult<Option<DateTime<Utc>>> {
         let now = sys_time()?;
         let now = DateTime::<Utc>::from_utc(
             NaiveDateTime::from_timestamp(now.as_secs_f64() as i64, now.subsec_nanos()),
             Utc,
         );
+        //Get the recent agents so we can check that the current agent is not already 
         let recent_agents = hc_time_index::get_links_and_load_for_time_span::<AgentReference>(
             String::from("active_agent"),
             now - *ACTIVE_AGENT_DURATION,
@@ -59,40 +58,58 @@ impl SocialContextDNA {
             SearchStrategy::Bfs,
             None,
         )?;
-        debug!("Got recent agents: {:#?}", recent_agents);
-        if recent_agents
+        debug!("Social-Context.add_active_agent_link: Got recent agents: {:#?}", recent_agents);
+
+        let current_agent_online = recent_agents
             .iter()
             .find(|agent| {
                 agent.agent
                     == agent_info()
                         .expect("Could not get agent info")
                         .agent_latest_pubkey
-            })
-            .is_none()
-        {
-            let agent_ref = AgentReference {
-                agent: agent_info()?.agent_initial_pubkey,
-                timestamp: now,
-            };
-            debug!("Adding agent ref: {:#?}", agent_ref);
-            create_entry(&agent_ref)?;
-            hc_time_index::index_entry(
-                String::from("active_agent"),
-                agent_ref,
-                LinkTag::new(""),
-            )?;
-        };
-        Ok(())
+            });
+        match current_agent_online {
+            Some(agent_ref) => {
+                //If the agent is already marked online then return the timestamp of them being online so the zome caller can add another active_agent link at the correct time in the future
+                //But for now this is TODO and we will just add an agent reference anyway
+                let new_agent_ref = AgentReference {
+                    agent: agent_info()?.agent_initial_pubkey,
+                    timestamp: now,
+                };
+                create_entry(&new_agent_ref)?;
+                hc_time_index::index_entry(
+                    String::from("active_agent"),
+                    new_agent_ref,
+                    LinkTag::new(""),
+                )?;
+                Ok(Some(agent_ref.timestamp))
+            },
+            None => {
+                //Agent is not marked online so lets add an online agent reference
+                let agent_ref = AgentReference {
+                    agent: agent_info()?.agent_initial_pubkey,
+                    timestamp: now,
+                };
+                create_entry(&agent_ref)?;
+                hc_time_index::index_entry(
+                    String::from("active_agent"),
+                    agent_ref,
+                    LinkTag::new(""),
+                )?;
+                Ok(None)
+            }
+        }
     }
 
     pub fn index_link(link: LinkExpression) -> SocialContextResult<()> {
-        let link_hash = hash_entry(&link)?;
-
+        //Check the INDEX_STRATEGY defined in the DNA properties and generate appropriate number of link permutations
+        //TODO: link strategy should be defined per zome call and not derived from DNA properties
         let link_indexes = match *INDEX_STRAT {
             IndexStrategy::Full => generate_link_path_permutations(&link)?,
             IndexStrategy::FullWithWildCard => {
                 let mut perm = generate_link_path_permutations(&link)?;
-                perm.push((String::from("*"), String::from("*")));
+                let wildcard = get_wildcard();
+                perm.push((wildcard.to_string(), wildcard.to_string()));
                 perm
             }
             IndexStrategy::Simple => vec![(
@@ -116,6 +133,7 @@ impl SocialContextDNA {
             if *ENABLE_TIME_INDEX {
                 hc_time_index::index_entry(source, link.clone(), LinkTag::new(tag))?;
             } else {
+                let link_hash = hash_entry(&link)?;
                 let path_source = Path::from(source);
                 path_source.ensure()?;
                 create_link(path_source.hash()?, link_hash.clone(), LinkTag::new(tag))?;
@@ -126,9 +144,10 @@ impl SocialContextDNA {
 
     pub fn get_links(mut get_links: GetLinks) -> SocialContextResult<Vec<LinkExpression>> {
         let num_entities = get_links.triple.num_entities();
+        let wildcard = get_wildcard();
         if num_entities == 0 {
-            get_links.triple.source = Some(String::from("*"));
-            get_links.triple.predicate = Some(String::from("*"));
+            get_links.triple.source = Some(wildcard.to_string());
+            get_links.triple.predicate = Some(wildcard.to_string());
         };
 
         let (index, lt) = if get_links.triple.source.is_some() {
@@ -143,7 +162,7 @@ impl SocialContextDNA {
                     LinkTag::new(get_links.triple.predicate.unwrap()),
                 )
             } else {
-                (get_links.triple.source.unwrap(), LinkTag::new("*"))
+                (get_links.triple.source.unwrap(), LinkTag::new(wildcard))
             }
         } else if get_links.triple.target.is_some() {
             if get_links.triple.predicate.is_some() {
@@ -152,10 +171,10 @@ impl SocialContextDNA {
                     LinkTag::new(get_links.triple.predicate.unwrap()),
                 )
             } else {
-                (get_links.triple.target.unwrap(), LinkTag::new("*"))
+                (get_links.triple.target.unwrap(), LinkTag::new(wildcard))
             }
         } else {
-            (get_links.triple.predicate.unwrap(), LinkTag::new("*"))
+            (get_links.triple.predicate.unwrap(), LinkTag::new(wildcard))
         };
 
         if *ENABLE_TIME_INDEX {

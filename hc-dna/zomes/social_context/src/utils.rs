@@ -1,4 +1,4 @@
-use crate::LinkExpression;
+use crate::{LinkExpression, get_wildcard};
 use hdk::prelude::*;
 
 pub fn generate_link_path_permutations(
@@ -6,7 +6,7 @@ pub fn generate_link_path_permutations(
 ) -> ExternResult<Vec<(String, String)>> {
     let num_entities = link.data.num_entities();
     let mut out = vec![];
-    let wildcard = String::from("*");
+    let wildcard = get_wildcard().to_string();
 
     if num_entities == 0 {
         Err(WasmError::Host(String::from("Link has no entities")))

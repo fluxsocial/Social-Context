@@ -39,6 +39,7 @@ fn init(_: ()) -> ExternResult<InitCallbackResult> {
     let mut functions: GrantedFunctions = BTreeSet::new();
     functions.insert((zome_info()?.zome_name, "recv_remote_signal".into()));
 
+    //Create open cap grant to allow agents to send signals of links to each other
     create_cap_grant(CapGrantEntry {
         tag: "".into(),
         // empty access converts to unrestricted
@@ -59,9 +60,17 @@ pub fn add_link(add_link_data: LinkExpression) -> ExternResult<()> {
     SocialContextDNA::add_link(add_link_data).map_err(|err| WasmError::Host(err.to_string()))
 }
 
+#[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
+pub struct AddActiveAgentLinkResponse {
+    pub existing: Option<DateTime<Utc>>,
+}
+
 #[hdk_extern]
-pub fn add_active_agent_link(_: ()) -> ExternResult<()> {
-    SocialContextDNA::add_active_agent_link().map_err(|err| WasmError::Host(err.to_string()))
+pub fn add_active_agent_link(_: ()) -> ExternResult<AddActiveAgentLinkResponse> {
+    let res = SocialContextDNA::add_active_agent_link().map_err(|err| WasmError::Host(err.to_string()))?;
+    Ok(AddActiveAgentLinkResponse {
+        existing: res
+    })
 }
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
@@ -113,8 +122,13 @@ pub enum IndexStrategy {
 pub struct SocialContextProperties {
     pub active_agent_duration_s: i64,
     pub enable_signals: bool,
+    //TODO: lets set this per add_link zome call and not lock in each DNA to enabling or disabling this feature, there are cases where you want both time indexes and regular
     pub enable_time_index: bool,
     pub index_strategy: String,
+}
+
+fn get_wildcard() -> &'static str {
+    "*"
 }
 
 lazy_static! {
