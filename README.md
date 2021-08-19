@@ -1,8 +1,8 @@
 # Social-Context
 
-This is a sophisticated AD4M Language for link sharing (LinkLanguage) in [Neighbourhoods](https://neighbourhoods.network/) which has the following AD4M [type signature](https://github.com/perspect3vism/ad4m/blob/68f3a48148391b94f929996d91dc0882a1bbf2d0/src/neighbourhood/Neighbourhood.ts#L8), built using Holochain.
+This is a sophisticated AD4M Language for link sharing (LinkLanguage) in [Neighbourhoods](https://neighbourhoods.network/) which has the following [AD4M type signature](https://github.com/perspect3vism/ad4m/blob/68f3a48148391b94f929996d91dc0882a1bbf2d0/src/neighbourhood/Neighbourhood.ts#L8).
 
-Ad4m [Links](https://github.com/perspect3vism/ad4m/blob/68f3a48148391b94f929996d91dc0882a1bbf2d0/src/links/Links.ts#L5) are a shape much like an RDF [triple](https://en.wikipedia.org/wiki/Semantic_triple). This shape allows us to associate a given subject to a given object with a predicate as another data point in this link. From such a structure you can start to associate pieces of data (in this case ad4m expression references) to each other and begin encoding application logic.<br> 
+AD4M [Links](https://github.com/perspect3vism/ad4m/blob/68f3a48148391b94f929996d91dc0882a1bbf2d0/src/links/Links.ts#L5) are a shape much like an [RDF triple](https://en.wikipedia.org/wiki/Semantic_triple). This shape allows us to associate a given `subject` to a given `target` with a `predicate` as another data point in this link. From such a structure you can start to associate pieces of data (in this case AD4M expression references) to each other and begin encoding application logic.<br> 
 The ad4m linkLanguage provides the following interface for querying/adding links: [LinkLanguage](https://github.com/perspect3vism/ad4m/blob/68f3a48148391b94f929996d91dc0882a1bbf2d0/src/language/Language.ts#L104).<br>
 
 The ad4m language defined here will call the included holochain DNA (found in `hc-dna`). This holochain DNA is configurable based on the dna properties that are passed when being installed (see `hc-dna/workdir/*.yaml`) for some examples. Overview of the DNA properties and what they do are as follows:
