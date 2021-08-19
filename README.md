@@ -8,10 +8,10 @@ The ad4m linkLanguage provides the following interface for querying/adding links
 The ad4m language defined here will call the included holochain DNA (found in `hc-dna`). This holochain DNA is configurable based on the dna properties that are passed when being installed (see `hc-dna/workdir/*.yaml`) for some examples. Overview of the DNA properties and what they do are as follows:
 
 - `enforce_spam_limit`: number of links a given agent should be able to make per `max_chunk_interval` before failing validation due to spam protection.<br>
-- `max_chunk_interval`: This value if read by: https://github.com/holochain-open-dev/holochain-time-index and is used to determine the depth of the time tree that is generated in order to index links under a given time index.<br>
+- `max_chunk_interval`: This value if read by [holochain-time-index](https://github.com/holochain-open-dev/holochain-time-index) and is used to determine the depth of the time tree that is generated in order to index links under a given time index.<br>
 - `active_agent_duration_s`: Length of time that an agent is considered online for after adding an `active_agent` link pointing to their agent address.<br>
 - `enable_signals`: Determines if holochain signals should be sent to `active_agent(s)` when adding a link<br>
-- `enable_time_index`: Determines if links should be added to a time index that makes links queryable between time bounds, see (LinkQuery)[https://github.com/juntofoundation/Social-Context/blob/16f99a5f8c8c97febca1876968a2f1f6d37a0fa8/hc-dna/zomes/social_context/src/inputs.rs#L16]<br>
+- `enable_time_index`: Determines if links should be added to a time index that makes links queryable between time bounds, see [LinkQuery](https://github.com/juntofoundation/Social-Context/blob/16f99a5f8c8c97febca1876968a2f1f6d37a0fa8/hc-dna/zomes/social_context/src/inputs.rs#L16)<br>
 - `index_strategy`: Determines what values from the triple are indexed and thus queryable in the future. Options are `FullWithWildCard`, `Full` & `Simple`. Full with wildcard will make links discoverable by subject, predicate, target & *. Full will make discoverable by subject, predicate, target. Simple by only discoverable subject.<br>
 
 ## Build
