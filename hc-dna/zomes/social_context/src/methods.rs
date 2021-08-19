@@ -2,7 +2,7 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use hc_time_index::{IndexableEntry, SearchStrategy};
 use hdk::prelude::*;
 
-use crate::utils::generate_link_path_permutations;
+use crate::utils::{generate_link_path_permutations, LinkPermutation};
 use crate::errors::{SocialContextError, SocialContextResult};
 use crate::{
     GetLinks, LinkExpression, SocialContextDNA, UpdateLink, ACTIVE_AGENT_DURATION,
@@ -109,10 +109,10 @@ impl SocialContextDNA {
             IndexStrategy::FullWithWildCard => {
                 let mut perm = generate_link_path_permutations(&link)?;
                 let wildcard = get_wildcard();
-                perm.push((wildcard.to_string(), wildcard.to_string()));
+                perm.push(LinkPermutation::new(wildcard.to_string(), wildcard.to_string()));
                 perm
             }
-            IndexStrategy::Simple => vec![(
+            IndexStrategy::Simple => vec![LinkPermutation::new(
                 link.data
                     .source
                     .clone()
@@ -129,14 +129,13 @@ impl SocialContextDNA {
         };
 
         for link_index in link_indexes {
-            let (source, tag) = link_index;
             if *ENABLE_TIME_INDEX {
-                hc_time_index::index_entry(source, link.clone(), LinkTag::new(tag))?;
+                hc_time_index::index_entry(link_index.source, link.clone(), link_index.tag)?;
             } else {
                 let link_hash = hash_entry(&link)?;
-                let path_source = Path::from(source);
+                let path_source = Path::from(link_index.source);
                 path_source.ensure()?;
-                create_link(path_source.hash()?, link_hash.clone(), LinkTag::new(tag))?;
+                create_link(path_source.hash()?, link_hash.clone(), link_index.tag)?;
             };
         }
         Ok(())
@@ -150,31 +149,31 @@ impl SocialContextDNA {
             get_links.triple.predicate = Some(wildcard.to_string());
         };
 
-        let (index, lt) = if get_links.triple.source.is_some() {
+        let link_query_elements = if get_links.triple.source.is_some() {
             if get_links.triple.target.is_some() {
-                (
+                LinkPermutation::new(
                     get_links.triple.source.unwrap(),
-                    LinkTag::new(get_links.triple.target.unwrap()),
+                    get_links.triple.target.unwrap(),
                 )
             } else if get_links.triple.predicate.is_some() {
-                (
+                LinkPermutation::new(
                     get_links.triple.source.unwrap(),
-                    LinkTag::new(get_links.triple.predicate.unwrap()),
+                    get_links.triple.predicate.unwrap(),
                 )
             } else {
-                (get_links.triple.source.unwrap(), LinkTag::new(wildcard))
+                LinkPermutation::new(get_links.triple.source.unwrap(), wildcard)
             }
         } else if get_links.triple.target.is_some() {
             if get_links.triple.predicate.is_some() {
-                (
+                LinkPermutation::new(
                     get_links.triple.target.unwrap(),
-                    LinkTag::new(get_links.triple.predicate.unwrap()),
+                    get_links.triple.predicate.unwrap(),
                 )
             } else {
-                (get_links.triple.target.unwrap(), LinkTag::new(wildcard))
+                LinkPermutation::new(get_links.triple.target.unwrap(), wildcard)
             }
         } else {
-            (get_links.triple.predicate.unwrap(), LinkTag::new(wildcard))
+            LinkPermutation::new(get_links.triple.predicate.unwrap(), wildcard)
         };
 
         if *ENABLE_TIME_INDEX {
@@ -182,10 +181,10 @@ impl SocialContextDNA {
                 Ok(hc_time_index::get_links_and_load_for_time_span::<
                     LinkExpression,
                 >(
-                    index,
+                    link_query_elements.source,
                     get_links.from_date.unwrap(),
                     get_links.until_date.unwrap(),
-                    Some(lt),
+                    Some(link_query_elements.tag),
                     SearchStrategy::Dfs,
                     Some(get_links.limit),
                 )?)
@@ -202,16 +201,16 @@ impl SocialContextDNA {
                 Ok(hc_time_index::get_links_and_load_for_time_span::<
                     LinkExpression,
                 >(
-                    index,
+                    link_query_elements.source,
                     unix,
                     now,
-                    Some(lt),
+                    Some(link_query_elements.tag),
                     SearchStrategy::Bfs,
                     None,
                 )?)
             }
         } else {
-            SocialContextDNA::make_simple_link_query(Path::from(index).hash()?, Some(lt))
+            SocialContextDNA::make_simple_link_query(Path::from(link_query_elements.source).hash()?, Some(link_query_elements.tag))
         }
     }
 
@@ -266,9 +265,8 @@ impl SocialContextDNA {
             let link_indexes = generate_link_path_permutations(&link)?;
             let link_hash = link.hash()?;
             for link_index in link_indexes {
-                let (source, tag) = link_index;
-                let path_source = Path::from(source);
-                hdk::link::get_links(path_source.hash()?, Some(LinkTag::new(tag)))?
+                let path_source = Path::from(link_index.source);
+                hdk::link::get_links(path_source.hash()?, Some(link_index.tag))?
                     .into_inner()
                     .into_iter()
                     .filter(|link| link.target == link_hash)

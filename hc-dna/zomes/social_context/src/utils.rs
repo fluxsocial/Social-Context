@@ -1,12 +1,27 @@
 use crate::{LinkExpression, get_wildcard};
 use hdk::prelude::*;
 
-pub fn generate_link_path_permutations(
+pub (crate) struct LinkPermutation {
+    pub source: String,
+    pub tag: LinkTag
+}
+
+impl LinkPermutation {
+    pub (crate) fn new<T: Into<Vec<u8>>>(source: String, tag: T) -> LinkPermutation {
+        LinkPermutation {
+            source,
+            tag: LinkTag::new(tag)
+        }
+    }
+}
+
+pub (crate) fn generate_link_path_permutations(
     link: &LinkExpression,
-) -> ExternResult<Vec<(String, String)>> {
-    let num_entities = link.data.num_entities();
+) -> ExternResult<Vec<LinkPermutation>> {
     let mut out = vec![];
-    let wildcard = get_wildcard().to_string();
+
+    let num_entities = link.data.num_entities();
+    let wildcard = get_wildcard();
 
     if num_entities == 0 {
         Err(WasmError::Host(String::from("Link has no entities")))
@@ -15,18 +30,18 @@ pub fn generate_link_path_permutations(
         let target = link.data.target.clone().unwrap();
         let predicate = link.data.predicate.clone().unwrap();
         //source -> * -> LinkExpression
-        out.push((source.clone(), wildcard.clone()));
+        out.push(LinkPermutation::new(source.clone(), wildcard));
         //target -> * -> LinkExpression
-        out.push((target.clone(), wildcard.clone()));
+        out.push(LinkPermutation::new(target.clone(), wildcard));
         //Predicate -> * -> LinkExpression
-        out.push((predicate.clone(), wildcard.clone()));
+        out.push(LinkPermutation::new(predicate.clone(), wildcard));
 
         //source target -> * -> LinkExpression
-        out.push((source.clone(), target.clone()));
+        out.push(LinkPermutation::new(source.clone(), target.clone()));
         //source predicate -> * -> LinkExpression
-        out.push((source, predicate.clone()));
+        out.push(LinkPermutation::new(source, predicate.clone()));
         //target predicate -> * -> LinkExpression
-        out.push((target, predicate));
+        out.push(LinkPermutation::new(target, predicate));
         Ok(out)
     } else if num_entities == 2 {
         if link.data.source.is_some() {
@@ -34,34 +49,34 @@ pub fn generate_link_path_permutations(
                 let source = link.data.source.clone().unwrap();
                 let target = link.data.target.clone().unwrap();
                 //source target -> wildcard -> LinkExpression
-                out.push((source.clone(), target.clone()));
+                out.push(LinkPermutation::new(source.clone(), target.clone()));
 
                 //source -> wildcard -> LinkExpression
-                out.push((source, wildcard.clone()));
+                out.push(LinkPermutation::new(source, wildcard));
 
                 //target -> wildcard -> LinkExpression
-                out.push((target, wildcard));
+                out.push(LinkPermutation::new(target, wildcard));
             } else {
                 let source = link.data.source.clone().unwrap();
                 let predicate = link.data.predicate.clone().unwrap();
                 //source predicate -> wildcard -> LinkExpression
-                out.push((source.clone(), predicate.clone()));
+                out.push(LinkPermutation::new(source.clone(), predicate.clone()));
 
                 //source -> wildcard -> LinkExpression
-                out.push((source, wildcard.clone()));
+                out.push(LinkPermutation::new(source, wildcard));
 
                 //Predicate -> wildcard -> LinkExpression
-                out.push((predicate, wildcard));
+                out.push(LinkPermutation::new(predicate, wildcard));
             };
         } else if link.data.target.is_some() {
             let target = link.data.target.clone().unwrap();
             let predicate = link.data.predicate.clone().unwrap();
             //target, predicate -> wildcard -> LinkExpression
-            out.push((target.clone(), predicate.clone()));
+            out.push(LinkPermutation::new(target.clone(), predicate.clone()));
             //target -> * -> LinkExpression
-            out.push((target, wildcard.clone()));
+            out.push(LinkPermutation::new(target, wildcard));
             //Predicate -> * -> LinkExpression
-            out.push((predicate, wildcard));
+            out.push(LinkPermutation::new(predicate, wildcard));
         } else {
             unreachable!()
         };
@@ -69,17 +84,17 @@ pub fn generate_link_path_permutations(
     } else if link.data.source.is_some() {
         let source = link.data.source.clone().unwrap();
         //source -> * -> LinkExpression
-        out.push((source, wildcard));
+        out.push(LinkPermutation::new(source, wildcard));
         Ok(out)
     } else if link.data.target.is_some() {
         let target = link.data.target.clone().unwrap();
         //target -> * -> LinkExpression
-        out.push((target, wildcard));
+        out.push(LinkPermutation::new(target, wildcard));
         Ok(out)
     } else {
         let predicate = link.data.predicate.clone().unwrap();
         //Predicate -> * -> LinkExpression
-        out.push((predicate, wildcard));
+        out.push(LinkPermutation::new(predicate, wildcard));
         Ok(out)
     }
 }
