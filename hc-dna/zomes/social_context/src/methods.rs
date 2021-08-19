@@ -233,7 +233,7 @@ impl SocialContextDNA {
     }
 
     //Pretty basic delete as it just removes link from index tree and then removes entry itself.
-    //Reminants of the link will still exist in the index tree as indexes are created for each element of triple.
+    //Remnants of the link will still exist in the index tree as indexes are created for each element of triple.
     //TODO: need another method on time_index where we can delete from index where target entry of index == some value
     pub fn remove_link(link: LinkExpression) -> SocialContextResult<()> {
         let entry =
