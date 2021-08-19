@@ -1,6 +1,6 @@
 # Social-Context
 
-This is a sophisticated AD4M Language for link sharing (LinkLanguage) in [Neighbourhoods](https://neighbourhoods.network/) which has the following [AD4M type signature](https://github.com/perspect3vism/ad4m/blob/68f3a48148391b94f929996d91dc0882a1bbf2d0/src/neighbourhood/Neighbourhood.ts#L8).
+This is a sophisticated AD4M Language for link sharing in [Neighbourhoods](https://neighbourhoods.network/) which has the following [AD4M type signature](https://github.com/perspect3vism/ad4m/blob/68f3a48148391b94f929996d91dc0882a1bbf2d0/src/neighbourhood/Neighbourhood.ts#L8).
 
 AD4M [Links](https://github.com/perspect3vism/ad4m/blob/68f3a48148391b94f929996d91dc0882a1bbf2d0/src/links/Links.ts#L5) are a shape much like an [RDF triple](https://en.wikipedia.org/wiki/Semantic_triple). This shape allows us to associate a given `subject` to a given `target` with a `predicate` as another data point in this link. From such a structure you can start to associate pieces of data (in this case AD4M expression references) to each other and begin encoding application logic.<br> 
 The ad4m linkLanguage provides the following interface for querying/adding links: [LinkLanguage](https://github.com/perspect3vism/ad4m/blob/68f3a48148391b94f929996d91dc0882a1bbf2d0/src/language/Language.ts#L104).<br>
