@@ -14,6 +14,24 @@ The ad4m language defined here will call the included holochain DNA (found in `h
 - `enable_time_index`: Determines if links should be added to a time index that makes links queryable between time bounds, see [LinkQuery](https://github.com/juntofoundation/Social-Context/blob/16f99a5f8c8c97febca1876968a2f1f6d37a0fa8/hc-dna/zomes/social_context/src/inputs.rs#L16)<br>
 - `index_strategy`: Determines what values from the triple are indexed and thus queryable in the future. Options are `FullWithWildCard`, `Full` & `Simple`. Full with wildcard will make links discoverable by subject, predicate, target & *. Full will make discoverable by subject, predicate, target. Simple by only discoverable subject.<br>
 
+# How is this used in Junto?
+
+Neighbourhoods (and this ad4m language as the backbone) are used in the Junto [communities app](https://github.com/juntofoundation/communities) to represent a community and more specifically share links agents create on a community with each other. <br>
+Via the [ad4m-executor](https://github.com/perspect3vism/ad4m-executor) we can create neighbourhoods + add links into the neighbourhood to be retreived by agents and used to construct application logic/experience.<br>
+
+The source, target, predicate values found in these links are usually ad4m expression references in the form: `languageHash://expressionId` and resolvable by the given ad4m language to expression objects. An example of a link you may find in a junto community neighbourhood may look like:
+<br>
+```
+{
+    source: "neighbourhood://neighbourhoodHash",
+    predicate: "hasPost",
+    target: "shortFormLanguageHash://expressionHash"
+}
+```
+<br>
+
+Here the target would point to an expression found in the [ShortForm language](https://github.com/juntofoundation/Short-Form-Expression) and be resolvable to an object found there. The `hasPost` predicate tag tells us this is a post on the neighbourhood found at source: `neighbourhood://neighbourhoodHash`.
+
 ## Build
 ```
 npm i
