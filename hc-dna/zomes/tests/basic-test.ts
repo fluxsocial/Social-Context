@@ -65,43 +65,35 @@ orchestrator.registerScenario("basic link testing", async (s, t) => {
             proof: {signature: "sig", key: "key"} 
     })
 
-    await alice_sc_happ.cells[0].call("social_context", "index_link",  { 
-          data: {source: "subject-full", target: "object-full", predicate: "predicate-full"},
-          author: "test1", 
-          timestamp: now, 
-          proof: {signature: "sig", key: "key"} 
-  })
-
-    //Get links on subject; expect back object & predicate
+    //Get links on subject and predicate; expect back object
     const subj_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
-    {source: "subject-full", target: null, predicate: null, from: new Date().toISOString(), until: new Date().toISOString(), limit: 10})
+    {source: "subject-full", target: null, predicate: "predicate-full", from: new Date().toISOString(), until: new Date().toISOString(), limit: 10})
     t.deepEqual(subj_links.length, 1);
     console.log("INT-TEST: subject links", subj_links);
 
-    //Get links on subject & object; expect back predicate 
+    //Get links on subject & object; don't expect back predicate 
     const subj_obj_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
     {source: "subject-full", target: "object-full", predicate: null, from: new Date().toISOString(), until: new Date().toISOString(), limit: 10})
-    t.deepEqual(subj_obj_links.length, 1);
+    t.deepEqual(subj_obj_links.length, 0);
     console.log("INT-TEST: subject object links", subj_obj_links);
 
-    //Get links on object; expect back subject and predicate
+    //Get links on object; don't expect back subject and predicate
     const object_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
     {source: null, target: "object-full", predicate: null, from: new Date().toISOString(), until: new Date().toISOString(), limit: 10})
-    t.deepEqual(object_links.length, 1);
+    t.deepEqual(object_links.length, 0);
     console.log("INT-TEST: object links", object_links);
 
-    //Get links on object & predicate; expect back subject
+    //Get links on object & predicate; don't expect back subject
     const object_pred_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
     {source: null, target: "object-full", predicate: "predicate-full", from: new Date().toISOString(), until: new Date().toISOString(), limit: 10})
-    t.deepEqual(object_pred_links.length, 1);
+    t.deepEqual(object_pred_links.length, 0);
     console.log("INT-TEST: object predicate links", object_pred_links)
 
-    //Get links on predicate; expect back subject and object
+    //Get links on predicate; don't expect back subject and object
     const pred_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
     {source: null, target: null, predicate: "predicate-full", from: new Date().toISOString(), until: new Date().toISOString(), limit: 10})
-    t.deepEqual(pred_links.length, 1);
+    t.deepEqual(pred_links.length, 0);
     console.log("INT-TEST: predicate links", pred_links)
-    t.pass()
 })
 
 orchestrator.registerScenario("Subject object link test", async (s, t) => {
@@ -119,7 +111,7 @@ orchestrator.registerScenario("Subject object link test", async (s, t) => {
     author: "test1", timestamp: now, proof: {signature: "sig", key: "key"} })
 
     await alice_sc_happ.cells[0].call("social_context", "index_link",  { link: { data: {source: "subject-2", target: "Qmd6AZzLjfGWNAqWLGTGy354JC1bK26XNf7rTEEsJfv7Fe://Qmdrbjto9DDbUY8eMALPfmB35xh9m2Yce8ksk1NkMEZnQ9", predicate: null},
-    author: "test1", timestamp: now, proof: {signature: "sig", key: "key"} })
+    author: "test1", timestamp: now, proof: {signature: "sig", key: "key"} } })
 
     //Get links on subject; expect back object & predicate
     const subj_links2 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
