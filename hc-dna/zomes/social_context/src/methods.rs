@@ -18,7 +18,7 @@ impl SocialContextDNA {
         if *ENABLE_SIGNALS {
             let now = sys_time()?;
             let now = DateTime::<Utc>::from_utc(
-                NaiveDateTime::from_timestamp(now.as_secs_f64() as i64, now.subsec_nanos()),
+                NaiveDateTime::from_timestamp(now.0, now.1),
                 Utc,
             );
             //Get recent agents (agents which have marked themselves online in time period now -> ACTIVE_AGENT_DURATION as derived from DNA properties)
@@ -46,7 +46,7 @@ impl SocialContextDNA {
     pub fn add_active_agent_link() -> SocialContextResult<Option<DateTime<Utc>>> {
         let now = sys_time()?;
         let now = DateTime::<Utc>::from_utc(
-            NaiveDateTime::from_timestamp(now.as_secs_f64() as i64, now.subsec_nanos()),
+            NaiveDateTime::from_timestamp(now.0, now.1),
             Utc,
         );
         //Get the recent agents so we can check that the current agent is not already 
@@ -210,7 +210,7 @@ impl SocialContextDNA {
                 //This will return all links since the hc_time_index crate does not support indexing before unix epoch currently
                 let now = sys_time()?;
                 let now = DateTime::<Utc>::from_utc(
-                    NaiveDateTime::from_timestamp(now.as_secs_f64() as i64, now.subsec_nanos()),
+                    NaiveDateTime::from_timestamp(now.0, now.1),
                     Utc,
                 );
                 let unix = DateTime::<Utc>::from_utc(
