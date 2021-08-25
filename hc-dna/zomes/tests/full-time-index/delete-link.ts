@@ -1,4 +1,4 @@
-import { localConductorConfig, installation, sleep } from './common'
+import { localConductorConfig, installation, sleep } from '../common'
 
 module.exports = (orchestrator) => {
 	orchestrator.registerScenario("Link delete", async (s, t) => {

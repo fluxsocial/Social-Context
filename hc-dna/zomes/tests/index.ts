@@ -4,17 +4,17 @@
 import { Orchestrator } from '@holochain/tryorama'
 
 let orchestrator = new Orchestrator()
-require('./subject-predicate-object-link')(orchestrator)
+require('./full-time-index/subject-predicate-object-link')(orchestrator)
 orchestrator.run()
 
 orchestrator = new Orchestrator()
-require('./subject-object-link')(orchestrator)
+require('./full-time-index/subject-object-link')(orchestrator)
 orchestrator.run()
 
 orchestrator = new Orchestrator()
-require('./subject-predicate-link')(orchestrator)
+require('./full-time-index/subject-predicate-link')(orchestrator)
 orchestrator.run()
 
 orchestrator = new Orchestrator()
-require('./link-delete')(orchestrator)
+require('./full-time-index/delete-link')(orchestrator)
 orchestrator.run()
