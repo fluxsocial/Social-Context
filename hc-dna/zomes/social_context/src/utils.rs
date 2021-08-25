@@ -1,6 +1,7 @@
 use crate::{get_wildcard, inputs::Triple};
 use hdk::prelude::*;
 
+#[derive(PartialEq, Debug)]
 pub (crate) struct LinkPermutation {
     pub root_index: String,
     pub tag: LinkTag
@@ -103,5 +104,108 @@ pub (crate) fn generate_link_path_permutations(
         //Predicate -> * -> LinkExpression
         out.push(LinkPermutation::new(predicate, wildcard));
         Ok(out)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn generate_link_path_permutations_works() {
+        const TRIPLE_SOURCE: &str = "source";
+        const TRIPLE_TARGET: &str = "target";
+        const TRIPLE_PREDICATE: &str = "predicate";
+        const WILDCARD: &str = "*";
+
+        // The triple contains source, target, predicate
+        let triple = Triple {
+            source: Some(TRIPLE_SOURCE.to_string()),
+            target: Some(TRIPLE_TARGET.to_string()),
+            predicate: Some(TRIPLE_PREDICATE.to_string()),
+        };
+        let result = generate_link_path_permutations(&triple).unwrap();
+        assert_eq!(result.len(), 6);
+        assert_eq!(result[0], LinkPermutation::new(TRIPLE_SOURCE.to_string(), WILDCARD.to_string()));
+        assert_eq!(result[1], LinkPermutation::new("target".to_string(), WILDCARD.to_string()));
+        assert_eq!(result[2], LinkPermutation::new(TRIPLE_PREDICATE.to_string(), WILDCARD.to_string()));
+        assert_eq!(result[3], LinkPermutation::new(TRIPLE_SOURCE.to_string(), TRIPLE_TARGET.to_string()));
+        assert_eq!(result[4], LinkPermutation::new(TRIPLE_SOURCE.to_string(), TRIPLE_PREDICATE.to_string()));
+        assert_eq!(result[5], LinkPermutation::new(TRIPLE_TARGET.to_string(), TRIPLE_PREDICATE.to_string()));
+
+        // The triple contains source, target
+        let triple = Triple {
+            source: Some(TRIPLE_SOURCE.to_string()),
+            target: Some(TRIPLE_TARGET.to_string()),
+            predicate: None,
+        };
+        let result = generate_link_path_permutations(&triple).unwrap();
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0], LinkPermutation::new(TRIPLE_SOURCE.to_string(), TRIPLE_TARGET.to_string()));
+        assert_eq!(result[1], LinkPermutation::new(TRIPLE_SOURCE.to_string(), WILDCARD.to_string()));
+        assert_eq!(result[2], LinkPermutation::new(TRIPLE_TARGET.to_string(), WILDCARD.to_string()));
+
+        // The triple contains source, predicate
+        let triple = Triple {
+            source: Some(TRIPLE_SOURCE.to_string()),
+            target: None,
+            predicate: Some(TRIPLE_PREDICATE.to_string()),
+        };
+        let result = generate_link_path_permutations(&triple).unwrap();
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0], LinkPermutation::new(TRIPLE_SOURCE.to_string(), TRIPLE_PREDICATE.to_string()));
+        assert_eq!(result[1], LinkPermutation::new(TRIPLE_SOURCE.to_string(), WILDCARD.to_string()));
+        assert_eq!(result[2], LinkPermutation::new(TRIPLE_PREDICATE.to_string(), WILDCARD.to_string()));
+
+        // The triple contains target, predicate
+        let triple = Triple {
+            source: None,
+            target: Some(TRIPLE_TARGET.to_string()),
+            predicate: Some(TRIPLE_PREDICATE.to_string()),
+        };
+        let result = generate_link_path_permutations(&triple).unwrap();
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0], LinkPermutation::new(TRIPLE_TARGET.to_string(), TRIPLE_PREDICATE.to_string()));
+        assert_eq!(result[1], LinkPermutation::new(TRIPLE_TARGET.to_string(), WILDCARD.to_string()));
+        assert_eq!(result[2], LinkPermutation::new(TRIPLE_PREDICATE.to_string(), WILDCARD.to_string()));
+
+        // The triple contains source
+        let triple = Triple {
+            source: Some(TRIPLE_SOURCE.to_string()),
+            target: None,
+            predicate: None,
+        };
+        let result = generate_link_path_permutations(&triple).unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0], LinkPermutation::new(TRIPLE_SOURCE.to_string(), WILDCARD.to_string()));
+
+        // The triple contains target
+        let triple = Triple {
+            source: None,
+            target: Some(TRIPLE_TARGET.to_string()),
+            predicate: None,
+        };
+        let result = generate_link_path_permutations(&triple).unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0], LinkPermutation::new(TRIPLE_TARGET.to_string(), WILDCARD.to_string()));
+
+        // The triple contains predicate
+        let triple = Triple {
+            source: None,
+            target: None,
+            predicate: Some(TRIPLE_PREDICATE.to_string()),
+        };
+        let result = generate_link_path_permutations(&triple).unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0], LinkPermutation::new(TRIPLE_PREDICATE.to_string(), WILDCARD.to_string()));
+
+        // The triple contains nothing
+        let triple = Triple {
+            source: None,
+            target: None,
+            predicate: None,
+        };
+        let result = generate_link_path_permutations(&triple);
+        assert!(result.is_err());
     }
 }
