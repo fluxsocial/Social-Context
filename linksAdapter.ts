@@ -39,15 +39,6 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
     }
   }
 
-  async others(): Promise<string[]> {
-    return await this.socialContextDna.call(
-      DNA_NICK,
-      "social_context",
-      "get_others",
-      {}
-    );
-  }
-
   async addLink(link: Expression): Promise<void> {
     const data = prepareExpressionLink(link);
     await this.socialContextDna.call(DNA_NICK, "social_context", "add_link", data);

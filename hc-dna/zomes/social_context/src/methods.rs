@@ -226,10 +226,6 @@ impl SocialContextDNA {
             .collect::<SocialContextResult<Vec<LinkExpression>>>()?)
     }
 
-    pub fn get_others() -> SocialContextResult<Vec<String>> {
-        Ok(vec![])
-    }
-
     pub fn remove_link(link: LinkExpression) -> SocialContextResult<()> {
         //Get the LinkExpression entry to be deleted
         let entry =

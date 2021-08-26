@@ -74,16 +74,6 @@ pub fn add_active_agent_link(_: ()) -> ExternResult<AddActiveAgentLinkResponse> 
 }
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
-pub struct GetOthers(pub Vec<String>);
-
-#[hdk_extern]
-pub fn get_others(_: ()) -> ExternResult<GetOthers> {
-    Ok(GetOthers(
-        SocialContextDNA::get_others().map_err(|err| WasmError::Host(err.to_string()))?,
-    ))
-}
-
-#[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
 pub struct GetLinksResponse(pub Vec<LinkExpression>);
 
 #[hdk_extern]
