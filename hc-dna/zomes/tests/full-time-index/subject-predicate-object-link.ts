@@ -1,4 +1,4 @@
-import { localConductorConfig, installation } from './common'
+import { localConductorConfig, installation } from '../common'
 
 module.exports = (orchestrator) => {
 	orchestrator.registerScenario("basic link testing", async (s, t) => {
