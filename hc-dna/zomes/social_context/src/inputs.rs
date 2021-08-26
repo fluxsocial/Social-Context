@@ -26,20 +26,3 @@ pub struct GetLinks {
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
 pub struct UriTag(pub String);
-
-impl Triple {
-    pub fn num_entities(&self) -> usize {
-        let mut num = 0;
-        if self.source.is_some() {
-            num += 1;
-        };
-        if self.target.is_some() {
-            num += 1;
-        };
-        if self.predicate.is_some() {
-            num += 1;
-        };
-
-        num
-    }
-}

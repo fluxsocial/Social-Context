@@ -149,47 +149,48 @@ impl SocialContextDNA {
         Ok(())
     }
 
-    pub fn get_root_index_and_tag(mut triple: Triple) -> LinkPermutation {
+    pub fn get_root_index_and_tag(triple: Triple) -> LinkPermutation {
         let wildcard = get_wildcard();
-        //No elements were supplied in the triple so we use wildcards as source + predicate to simulate a getAllLinks query 
-        //(note for this to work the FullWithWildCard index needs to be enabled)
-        if  triple.num_entities() == 0 {
-            triple.source = Some(wildcard.to_string());
-            triple.predicate = Some(wildcard.to_string());
-        };
-
+        let Triple { source, target, predicate } = triple;
+        
         //Derive the source link index value + link tag value to query with based on the values passed in GetLinks.triple
         //Note we are only looking for two or one elements in the triple since if you have three you already have the LinkExpression! 
-        if triple.source.is_some() {
-            if triple.target.is_some() {
-                //Query with source + target; will match all LinkExpression with same source + target
-                //In this case the predicate unknown here and thus the value zome caller is interested in
-                LinkPermutation::new(
-                    triple.source.unwrap(),
-                    triple.target.unwrap(),
-                )
-            } else if triple.predicate.is_some() {
-                //Query with source + predicate
-                //Here target is unknown and thus the value the zome caller is looking for
-                LinkPermutation::new(
-                    triple.source.unwrap(),
-                    triple.predicate.unwrap(),
-                )
-            } else {
-                //Look for all links with the given source
-                LinkPermutation::new(triple.source.unwrap(), wildcard)
-            }
-        } else if triple.target.is_some() {
-            if triple.predicate.is_some() {
-                LinkPermutation::new(
-                    triple.target.unwrap(),
-                    triple.predicate.unwrap(),
-                )
-            } else {
-                LinkPermutation::new(triple.target.unwrap(), wildcard)
-            }
-        } else {
-            LinkPermutation::new(triple.predicate.unwrap(), wildcard)
+        match (source, target, predicate) {
+            //Query with source + target; will match all LinkExpression with same source + target
+            //In this case the predicate unknown here and thus the value zome caller is interested in
+            (Some(source), Some(target), _) => LinkPermutation::new(
+                source,
+                target,
+            ),
+            //Query with source + predicate
+            //Here target is unknown and thus the value the zome caller is looking for
+            (Some(source), None, Some(predicate)) => LinkPermutation::new(
+                source,
+                predicate,
+            ),
+            (None, Some(target), Some(predicate)) => LinkPermutation::new(
+                target,
+                predicate,
+            ),
+            //Look for all links with the given source
+            (Some(source), None, None) => LinkPermutation::new(
+                source,
+                wildcard,
+            ),
+            (None, Some(target), None) => LinkPermutation::new(
+                target,
+                wildcard,
+            ),
+            (None, None, Some(predicate)) => LinkPermutation::new(
+                predicate,
+                wildcard,
+            ),
+            //No elements were supplied in the triple so we use wildcards as source + predicate to simulate a getAllLinks query 
+            //(note for this to work the FullWithWildCard index needs to be enabled)
+            (None, None, None) => LinkPermutation::new(
+                wildcard.to_string(),
+                wildcard,
+            ),
         }
     }
 
