@@ -8,6 +8,7 @@ use crate::{
     GetLinks, LinkExpression, SocialContextDNA, UpdateLink, ACTIVE_AGENT_DURATION,
     ENABLE_SIGNALS, ENABLE_TIME_INDEX, INDEX_STRAT, IndexStrategy, AgentReference
 };
+use crate::inputs::Triple;
 
 impl SocialContextDNA {
     pub fn add_link(link: LinkExpression) -> SocialContextResult<()> {
@@ -148,48 +149,52 @@ impl SocialContextDNA {
         Ok(())
     }
 
-    pub fn get_links(mut get_links: GetLinks) -> SocialContextResult<Vec<LinkExpression>> {
+    pub fn get_root_index_and_tag(mut triple: Triple) -> LinkPermutation {
         let wildcard = get_wildcard();
         //No elements were supplied in the triple so we use wildcards as source + predicate to simulate a getAllLinks query 
         //(note for this to work the FullWithWildCard index needs to be enabled)
-        if  get_links.triple.num_entities() == 0 {
-            get_links.triple.source = Some(wildcard.to_string());
-            get_links.triple.predicate = Some(wildcard.to_string());
+        if  triple.num_entities() == 0 {
+            triple.source = Some(wildcard.to_string());
+            triple.predicate = Some(wildcard.to_string());
         };
 
         //Derive the source link index value + link tag value to query with based on the values passed in GetLinks.triple
         //Note we are only looking for two or one elements in the triple since if you have three you already have the LinkExpression! 
-        let link_query_elements = if get_links.triple.source.is_some() {
-            if get_links.triple.target.is_some() {
+        if triple.source.is_some() {
+            if triple.target.is_some() {
                 //Query with source + target; will match all LinkExpression with same source + target
                 //In this case the predicate unknown here and thus the value zome caller is interested in
                 LinkPermutation::new(
-                    get_links.triple.source.unwrap(),
-                    get_links.triple.target.unwrap(),
+                    triple.source.unwrap(),
+                    triple.target.unwrap(),
                 )
-            } else if get_links.triple.predicate.is_some() {
+            } else if triple.predicate.is_some() {
                 //Query with source + predicate
                 //Here target is unknown and thus the value the zome caller is looking for
                 LinkPermutation::new(
-                    get_links.triple.source.unwrap(),
-                    get_links.triple.predicate.unwrap(),
+                    triple.source.unwrap(),
+                    triple.predicate.unwrap(),
                 )
             } else {
                 //Look for all links with the given source
-                LinkPermutation::new(get_links.triple.source.unwrap(), wildcard)
+                LinkPermutation::new(triple.source.unwrap(), wildcard)
             }
-        } else if get_links.triple.target.is_some() {
-            if get_links.triple.predicate.is_some() {
+        } else if triple.target.is_some() {
+            if triple.predicate.is_some() {
                 LinkPermutation::new(
-                    get_links.triple.target.unwrap(),
-                    get_links.triple.predicate.unwrap(),
+                    triple.target.unwrap(),
+                    triple.predicate.unwrap(),
                 )
             } else {
-                LinkPermutation::new(get_links.triple.target.unwrap(), wildcard)
+                LinkPermutation::new(triple.target.unwrap(), wildcard)
             }
         } else {
-            LinkPermutation::new(get_links.triple.predicate.unwrap(), wildcard)
-        };
+            LinkPermutation::new(triple.predicate.unwrap(), wildcard)
+        }
+    }
+
+    pub fn get_links(get_links: GetLinks) -> SocialContextResult<Vec<LinkExpression>> {
+        let link_query_elements = SocialContextDNA::get_root_index_and_tag(get_links.triple);
 
         //TODO: this should be specified by the zome caller and not in DNA props
         if *ENABLE_TIME_INDEX {
@@ -306,5 +311,79 @@ impl SocialContextDNA {
         SocialContextDNA::remove_link(update_link.source)?;
         SocialContextDNA::add_link(update_link.target)?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::utils::LinkPermutation;
+    use crate::inputs::Triple;
+    use crate::SocialContextDNA;
+
+    #[test]
+    fn get_root_index_and_tag_works() {
+        let triple = Triple {
+            source: Some("source".to_string()),
+            target: Some("target".to_string()),
+            predicate: Some("predicate".to_string()),
+        };
+        let result = SocialContextDNA::get_root_index_and_tag(triple);
+        assert_eq!(result, LinkPermutation::new("source".to_string(), "target".to_string()));
+
+        let triple = Triple {
+            source: Some("source".to_string()),
+            target: Some("target".to_string()),
+            predicate: None,
+        };
+        let result = SocialContextDNA::get_root_index_and_tag(triple);
+        assert_eq!(result, LinkPermutation::new("source".to_string(), "target".to_string()));
+
+        let triple = Triple {
+            source: Some("source".to_string()),
+            target: None,
+            predicate: Some("predicate".to_string()),
+        };
+        let result = SocialContextDNA::get_root_index_and_tag(triple);
+        assert_eq!(result, LinkPermutation::new("source".to_string(), "predicate".to_string()));
+
+        let triple = Triple {
+            source: None,
+            target: Some("target".to_string()),
+            predicate: Some("predicate".to_string()),
+        };
+        let result = SocialContextDNA::get_root_index_and_tag(triple);
+        assert_eq!(result, LinkPermutation::new("target".to_string(), "predicate".to_string()));
+
+        let triple = Triple {
+            source: Some("source".to_string()),
+            target: None,
+            predicate: None,
+        };
+        let result = SocialContextDNA::get_root_index_and_tag(triple);
+        assert_eq!(result, LinkPermutation::new("source".to_string(), "*".to_string()));
+
+        let triple = Triple {
+            source: None,
+            target: Some("target".to_string()),
+            predicate: None,
+        };
+        let result = SocialContextDNA::get_root_index_and_tag(triple);
+        assert_eq!(result, LinkPermutation::new("target".to_string(), "*".to_string()));
+
+        let triple = Triple {
+            source: None,
+            target: None,
+            predicate: Some("predicate".to_string()),
+        };
+        let result = SocialContextDNA::get_root_index_and_tag(triple);
+        assert_eq!(result, LinkPermutation::new("predicate".to_string(), "*".to_string()));
+
+        let triple = Triple {
+            source: None,
+            target: None,
+            predicate: None,
+        };
+        let result = SocialContextDNA::get_root_index_and_tag(triple);
+        assert_eq!(result, LinkPermutation::new("*".to_string(), "*".to_string()));
     }
 }

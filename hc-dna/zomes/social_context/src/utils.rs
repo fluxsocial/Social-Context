@@ -2,7 +2,7 @@ use crate::inputs::Triple;
 use hdk::prelude::*;
 
 #[derive(PartialEq, Debug)]
-pub (crate) struct LinkPermutation {
+pub struct LinkPermutation {
     pub root_index: String,
     pub tag: LinkTag
 }
