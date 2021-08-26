@@ -12,6 +12,9 @@ mod validation;
 use inputs::*;
 pub use validation::*;
 
+
+entry_defs![Path::entry_def(), LinkExpression::entry_def(), AgentReference::entry_def()];
+
 #[hdk_entry(id = "link_data", visibility = "public")]
 #[serde(rename_all = "camelCase")]
 #[derive(Clone)]
@@ -29,10 +32,7 @@ pub struct AgentReference {
     pub timestamp: DateTime<Utc>,
 }
 
-#[hdk_extern]
-fn entry_defs(_: ()) -> ExternResult<EntryDefsCallbackResult> {
-    Ok(vec![Path::entry_def(), LinkExpression::entry_def(), AgentReference::entry_def()].into())
-}
+pub struct SocialContextDNA;
 
 #[hdk_extern]
 fn init(_: ()) -> ExternResult<InitCallbackResult> {
@@ -109,8 +109,6 @@ pub fn remove_link(remove_link: LinkExpression) -> ExternResult<()> {
     SocialContextDNA::remove_link(remove_link).map_err(|err| WasmError::Host(err.to_string()))
 }
 
-pub struct SocialContextDNA();
-
 #[derive(Serialize, Deserialize, Debug)]
 pub enum IndexStrategy {
     FullWithWildCard,
@@ -125,10 +123,6 @@ pub struct SocialContextProperties {
     //TODO: lets set this per add_link zome call and not lock in each DNA to enabling or disabling this feature, there are cases where you want both time indexes and regular
     pub enable_time_index: bool,
     pub index_strategy: String,
-}
-
-fn get_wildcard() -> &'static str {
-    "*"
 }
 
 lazy_static! {

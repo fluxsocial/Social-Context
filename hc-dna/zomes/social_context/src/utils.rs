@@ -1,4 +1,4 @@
-use crate::{get_wildcard, inputs::Triple};
+use crate::inputs::Triple;
 use hdk::prelude::*;
 
 #[derive(PartialEq, Debug)]
@@ -16,8 +16,12 @@ impl LinkPermutation {
     }
 }
 
+pub(crate) fn get_wildcard() -> &'static str {
+    "*"
+}
+
 /// This function generates the required source index value & tag that allows us to create an index for each element of the triple found in the link expression 
-pub (crate) fn generate_link_path_permutations(
+pub(crate) fn generate_link_path_permutations(
     triple: &Triple,
 ) -> ExternResult<Vec<LinkPermutation>> {
 

@@ -2,11 +2,11 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use hc_time_index::{IndexableEntry, SearchStrategy};
 use hdk::prelude::*;
 
-use crate::utils::{generate_link_path_permutations, LinkPermutation};
+use crate::utils::{generate_link_path_permutations, LinkPermutation, get_wildcard};
 use crate::errors::{SocialContextError, SocialContextResult};
 use crate::{
     GetLinks, LinkExpression, SocialContextDNA, UpdateLink, ACTIVE_AGENT_DURATION,
-    ENABLE_SIGNALS, ENABLE_TIME_INDEX, INDEX_STRAT, IndexStrategy, get_wildcard, AgentReference
+    ENABLE_SIGNALS, ENABLE_TIME_INDEX, INDEX_STRAT, IndexStrategy, AgentReference
 };
 
 impl SocialContextDNA {
