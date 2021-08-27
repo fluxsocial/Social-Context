@@ -1,54 +1,11 @@
 /// This test file tests the functioning of social context w/ time index enabled & signals disabled
 /// NOTE: if all tests are run together then some will fail
 
-import { Orchestrator, Config, InstallAgentsHapps } from '@holochain/tryorama'
-import { TransportConfigType, ProxyAcceptConfig, ProxyConfigType, NetworkType } from '@holochain/tryorama'
-import path from 'path'
-
-// Set up a Conductor configuration using the handy `Conductor.config` helper.
-// Read the docs for more on configuration.
-const network = {
-  network_type: NetworkType.QuicBootstrap,
-  transport_pool: [{
-    type: TransportConfigType.Proxy,
-    sub_transport: {type: TransportConfigType.Quic},
-    proxy_config: {
-      type: ProxyConfigType.LocalProxyServer,
-      proxy_accept_config: ProxyAcceptConfig.AcceptAll
-    }
-  }],
-  bootstrap_service: "https://bootstrap.holo.host",
-  tuning_params: {
-    gossip_loop_iteration_delay_ms: 10,
-    default_notify_remote_agent_count: 5,
-    default_notify_timeout_ms: 1000,
-    default_rpc_single_timeout_ms:  2000,
-    default_rpc_multi_remote_agent_count: 2,
-    default_rpc_multi_timeout_ms: 2000,
-    agent_info_expires_after_ms: 1000 * 60 * 20,
-    tls_in_mem_session_storage: 512,
-    proxy_keepalive_ms: 1000 * 60 * 2,
-    proxy_to_expire_ms: 1000 * 6 * 5
-  }
-}
-//const conductorConfig = Config.gen({network});
-const conductorConfig = Config.gen();
-
-const installation: InstallAgentsHapps = [
-  // agent 0
-  [
-    // happ 0
-    [path.join("../../workdir/social-context.dna")]
-  ]
-]
+import { Orchestrator } from '@holochain/tryorama'
+import { localConductorConfig, installation } from './common'
 
 const orchestrator = new Orchestrator()
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-const nowHourChange = new Date("August 12, 2021 14:01:30")
 const now = new Date()
 const unixDate = new Date("August 19, 1975 23:15:30").toISOString();
 
@@ -89,7 +46,7 @@ function constructLinkData(num: number, diff: number) {
 }
 
 orchestrator.registerScenario("pagination testing", async (s, t) => {
-    const [alice] = await s.players([conductorConfig])
+    const [alice] = await s.players([localConductorConfig])
     const [[alice_sc_happ]] = await alice.installAgentsHapps(installation)
 
     /// SIMPLE LINK TEST
