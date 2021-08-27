@@ -1,14 +1,14 @@
-use crate::{get_wildcard, inputs::Triple};
+use crate::inputs::Triple;
 use hdk::prelude::*;
 
 #[derive(PartialEq, Debug)]
-pub (crate) struct LinkPermutation {
+pub(crate) struct LinkPermutation {
     pub root_index: String,
     pub tag: LinkTag
 }
 
 impl LinkPermutation {
-    pub (crate) fn new<T: Into<Vec<u8>>>(source: String, tag: T) -> LinkPermutation {
+    pub(crate) fn new<T: Into<Vec<u8>>>(source: String, tag: T) -> LinkPermutation {
         LinkPermutation {
             root_index: source,
             tag: LinkTag::new(tag)
@@ -16,8 +16,12 @@ impl LinkPermutation {
     }
 }
 
+pub(crate) fn get_wildcard() -> &'static str {
+    "*"
+}
+
 /// This function generates the required source index value & tag that allows us to create an index for each element of the triple found in the link expression 
-pub (crate) fn generate_link_path_permutations(
+pub(crate) fn generate_link_path_permutations(
     triple: &Triple,
 ) -> ExternResult<Vec<LinkPermutation>> {
 
@@ -86,17 +90,62 @@ pub (crate) fn generate_link_path_permutations(
     }
 }
 
+/// Derive the source link index value and link tag value to query with based on the values passed in GetLinks.triple
+/// Note we are only looking for two or one elements in the triple, since if you have three you already have the LinkExpression! 
+pub(crate) fn get_link_permutation_by(triple: Triple) -> LinkPermutation {
+    let wildcard = get_wildcard();
+    let Triple { source, target, predicate } = triple;
+    
+    match (source, target, predicate) {
+        //Query with source + target; will match all LinkExpression with same source + target
+        //In this case the predicate unknown here and thus the value zome caller is interested in
+        (Some(source), Some(target), _) => LinkPermutation::new(
+            source,
+            target,
+        ),
+        //Query with source + predicate
+        //Here target is unknown and thus the value the zome caller is looking for
+        (Some(source), None, Some(predicate)) => LinkPermutation::new(
+            source,
+            predicate,
+        ),
+        (None, Some(target), Some(predicate)) => LinkPermutation::new(
+            target,
+            predicate,
+        ),
+        //Look for all links with the given source
+        (Some(source), None, None) => LinkPermutation::new(
+            source,
+            wildcard,
+        ),
+        (None, Some(target), None) => LinkPermutation::new(
+            target,
+            wildcard,
+        ),
+        (None, None, Some(predicate)) => LinkPermutation::new(
+            predicate,
+            wildcard,
+        ),
+        //No elements were supplied in the triple so we use wildcards as source + predicate to simulate a getAllLinks query 
+        //(note for this to work the FullWithWildCard index needs to be enabled)
+        (None, None, None) => LinkPermutation::new(
+            wildcard.to_string(),
+            wildcard,
+        ),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    const TRIPLE_SOURCE: &str = "source";
+    const TRIPLE_TARGET: &str = "target";
+    const TRIPLE_PREDICATE: &str = "predicate";
+    const WILDCARD: &str = "*";
+    
     #[test]
     fn generate_link_path_permutations_works() {
-        const TRIPLE_SOURCE: &str = "source";
-        const TRIPLE_TARGET: &str = "target";
-        const TRIPLE_PREDICATE: &str = "predicate";
-        const WILDCARD: &str = "*";
-
         // The triple contains source, target, predicate
         let triple = Triple {
             source: Some(TRIPLE_SOURCE.to_string()),
@@ -106,7 +155,7 @@ mod tests {
         let result = generate_link_path_permutations(&triple).unwrap();
         assert_eq!(result.len(), 6);
         assert_eq!(result[0], LinkPermutation::new(TRIPLE_SOURCE.to_string(), WILDCARD.to_string()));
-        assert_eq!(result[1], LinkPermutation::new("target".to_string(), WILDCARD.to_string()));
+        assert_eq!(result[1], LinkPermutation::new(TRIPLE_TARGET.to_string(), WILDCARD.to_string()));
         assert_eq!(result[2], LinkPermutation::new(TRIPLE_PREDICATE.to_string(), WILDCARD.to_string()));
         assert_eq!(result[3], LinkPermutation::new(TRIPLE_SOURCE.to_string(), TRIPLE_TARGET.to_string()));
         assert_eq!(result[4], LinkPermutation::new(TRIPLE_SOURCE.to_string(), TRIPLE_PREDICATE.to_string()));
@@ -186,5 +235,80 @@ mod tests {
         };
         let result = generate_link_path_permutations(&triple);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn get_link_permutation_by_triple_works() {
+        // The triple contains source, target, predicate
+        let triple = Triple {
+            source: Some(TRIPLE_SOURCE.to_string()),
+            target: Some(TRIPLE_TARGET.to_string()),
+            predicate: Some(TRIPLE_PREDICATE.to_string()),
+        };
+        let result = get_link_permutation_by(triple);
+        assert_eq!(result, LinkPermutation::new(TRIPLE_SOURCE.to_string(), TRIPLE_TARGET.to_string()));
+
+        // The triple contains source, target
+        let triple = Triple {
+            source: Some(TRIPLE_SOURCE.to_string()),
+            target: Some(TRIPLE_TARGET.to_string()),
+            predicate: None,
+        };
+        let result = get_link_permutation_by(triple);
+        assert_eq!(result, LinkPermutation::new(TRIPLE_SOURCE.to_string(), TRIPLE_TARGET.to_string()));
+
+        // The triple contains source, predicate
+        let triple = Triple {
+            source: Some(TRIPLE_SOURCE.to_string()),
+            target: None,
+            predicate: Some(TRIPLE_PREDICATE.to_string()),
+        };
+        let result = get_link_permutation_by(triple);
+        assert_eq!(result, LinkPermutation::new(TRIPLE_SOURCE.to_string(), TRIPLE_PREDICATE.to_string()));
+
+        // The triple contains target, predicate
+        let triple = Triple {
+            source: None,
+            target: Some(TRIPLE_TARGET.to_string()),
+            predicate: Some(TRIPLE_PREDICATE.to_string()),
+        };
+        let result = get_link_permutation_by(triple);
+        assert_eq!(result, LinkPermutation::new(TRIPLE_TARGET.to_string(), TRIPLE_PREDICATE.to_string()));
+
+        // The triple contains source
+        let triple = Triple {
+            source: Some(TRIPLE_SOURCE.to_string()),
+            target: None,
+            predicate: None,
+        };
+        let result = get_link_permutation_by(triple);
+        assert_eq!(result, LinkPermutation::new(TRIPLE_SOURCE.to_string(), WILDCARD.to_string()));
+
+        // The triple contains target
+        let triple = Triple {
+            source: None,
+            target: Some(TRIPLE_TARGET.to_string()),
+            predicate: None,
+        };
+        let result = get_link_permutation_by(triple);
+        assert_eq!(result, LinkPermutation::new(TRIPLE_TARGET.to_string(), WILDCARD.to_string()));
+
+        // The triple contains predicate
+        let triple = Triple {
+            source: None,
+            target: None,
+            predicate: Some(TRIPLE_PREDICATE.to_string()),
+        };
+        let result = get_link_permutation_by(triple);
+        assert_eq!(result, LinkPermutation::new(TRIPLE_PREDICATE.to_string(), WILDCARD.to_string()));
+
+        // The triple contains nothing
+        let triple = Triple {
+            source: None,
+            target: None,
+            predicate: None,
+        };
+        let result = get_link_permutation_by(triple);
+        assert_eq!(result, LinkPermutation::new(WILDCARD.to_string(), WILDCARD.to_string()));
     }
 }

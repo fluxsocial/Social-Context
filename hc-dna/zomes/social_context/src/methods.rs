@@ -2,11 +2,11 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use hc_time_index::{IndexableEntry, SearchStrategy};
 use hdk::prelude::*;
 
-use crate::utils::{generate_link_path_permutations, LinkPermutation};
+use crate::utils::{generate_link_path_permutations, get_link_permutation_by, LinkPermutation, get_wildcard};
 use crate::errors::{SocialContextError, SocialContextResult};
 use crate::{
     GetLinks, LinkExpression, SocialContextDNA, UpdateLink, ACTIVE_AGENT_DURATION,
-    ENABLE_SIGNALS, ENABLE_TIME_INDEX, INDEX_STRAT, IndexStrategy, get_wildcard, AgentReference
+    ENABLE_SIGNALS, ENABLE_TIME_INDEX, INDEX_STRAT, IndexStrategy, AgentReference
 };
 
 impl SocialContextDNA {
@@ -148,48 +148,8 @@ impl SocialContextDNA {
         Ok(())
     }
 
-    pub fn get_links(mut get_links: GetLinks) -> SocialContextResult<Vec<LinkExpression>> {
-        let wildcard = get_wildcard();
-        //No elements were supplied in the triple so we use wildcards as source + predicate to simulate a getAllLinks query 
-        //(note for this to work the FullWithWildCard index needs to be enabled)
-        if  get_links.triple.num_entities() == 0 {
-            get_links.triple.source = Some(wildcard.to_string());
-            get_links.triple.predicate = Some(wildcard.to_string());
-        };
-
-        //Derive the source link index value + link tag value to query with based on the values passed in GetLinks.triple
-        //Note we are only looking for two or one elements in the triple since if you have three you already have the LinkExpression! 
-        let link_query_elements = if get_links.triple.source.is_some() {
-            if get_links.triple.target.is_some() {
-                //Query with source + target; will match all LinkExpression with same source + target
-                //In this case the predicate unknown here and thus the value zome caller is interested in
-                LinkPermutation::new(
-                    get_links.triple.source.unwrap(),
-                    get_links.triple.target.unwrap(),
-                )
-            } else if get_links.triple.predicate.is_some() {
-                //Query with source + predicate
-                //Here target is unknown and thus the value the zome caller is looking for
-                LinkPermutation::new(
-                    get_links.triple.source.unwrap(),
-                    get_links.triple.predicate.unwrap(),
-                )
-            } else {
-                //Look for all links with the given source
-                LinkPermutation::new(get_links.triple.source.unwrap(), wildcard)
-            }
-        } else if get_links.triple.target.is_some() {
-            if get_links.triple.predicate.is_some() {
-                LinkPermutation::new(
-                    get_links.triple.target.unwrap(),
-                    get_links.triple.predicate.unwrap(),
-                )
-            } else {
-                LinkPermutation::new(get_links.triple.target.unwrap(), wildcard)
-            }
-        } else {
-            LinkPermutation::new(get_links.triple.predicate.unwrap(), wildcard)
-        };
+    pub fn get_links(get_links: GetLinks) -> SocialContextResult<Vec<LinkExpression>> {
+        let link_query_elements = get_link_permutation_by(get_links.triple);
 
         //TODO: this should be specified by the zome caller and not in DNA props
         if *ENABLE_TIME_INDEX {
@@ -264,10 +224,6 @@ impl SocialContextDNA {
                 }
             })
             .collect::<SocialContextResult<Vec<LinkExpression>>>()?)
-    }
-
-    pub fn get_others() -> SocialContextResult<Vec<String>> {
-        Ok(vec![])
     }
 
     pub fn remove_link(link: LinkExpression) -> SocialContextResult<()> {
