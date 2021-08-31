@@ -1,46 +1,13 @@
 /// This test files tests the functioning of the social context with time_index & signals enabled
 /// NOTE: if all tests are run together then some will fail
 
-import { Orchestrator, Config, InstallAgentsHapps } from '@holochain/tryorama'
-import { TransportConfigType, ProxyAcceptConfig, ProxyConfigType, NetworkType } from '@holochain/tryorama'
-import { HoloHash, InstallAppRequest } from '@holochain/conductor-api'
-import * as msgpack from '@msgpack/msgpack';
-import path from 'path'
-import blake2b from "blake2b";
-
-// Set up a Conductor configuration using the handy `Conductor.config` helper.
-// Read the docs for more on configuration.
-const network = {
-  network_type: NetworkType.QuicBootstrap,
-  transport_pool: [{
-    type: TransportConfigType.Proxy,
-    sub_transport: {type: TransportConfigType.Quic},
-    proxy_config: {
-      type: ProxyConfigType.LocalProxyServer,
-      proxy_accept_config: ProxyAcceptConfig.AcceptAll
-    }
-  }],
-  bootstrap_service: "https://bootstrap.holo.host",
-}
-//const conductorConfig = Config.gen({network});
-const conductorConfig = Config.gen();
-
-const installation: InstallAgentsHapps = [
-  // agent 0
-  [
-    // happ 0
-    [path.join("../../workdir/social-context.dna")]
-  ]
-]
+import { Orchestrator } from '@holochain/tryorama'
+import { localConductorConfig, installation, sleep } from './common'
 
 const orchestrator = new Orchestrator()
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 orchestrator.registerScenario("basic link signal testing", async (s, t) => {
-    const [alice, bob] = await s.players([conductorConfig, conductorConfig])
+    const [alice, bob] = await s.players([localConductorConfig, localConductorConfig])
     let aliceSignalCount = 0;
     let bobSignalCount = 0;
     alice.setSignalHandler((signal) => {
@@ -77,9 +44,4 @@ orchestrator.registerScenario("basic link signal testing", async (s, t) => {
     t.deepEqual(bobSignalCount, 1);
 })
 
-// Run all registered scenarios as a final step, and gather the report,
-// if you set up a reporter
-const report = orchestrator.run()
-
-// Note: by default, there will be no report
-console.log(report)
+orchestrator.run()
