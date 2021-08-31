@@ -32,9 +32,20 @@ The source, target, predicate values found in these links are usually ad4m expre
 
 Here the target would point to an expression found in the [ShortForm language](https://github.com/juntofoundation/Short-Form-Expression) and be resolvable to an object found there. The `hasPost` predicate tag tells us this is a post on the neighbourhood found at source: `neighbourhood://neighbourhoodHash`.
 
+# Development
+
 ## Build
+
 ```
 npm i
 npm run build
 ```
 This builds the Holochain DNA first, using `nix-shell` (which needs to be installed) and then packages the whole language including the DNA in `build/bundle.js`.
+
+## Test
+
+```
+make test
+```
+
+Add `RUST_LOG=debug TRYORAMA_LOG_LEVEL=debug` to test commands in package.json to view debug logs.
