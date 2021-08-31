@@ -234,7 +234,6 @@ impl SocialContextDNA {
             ))?;
 
         if *ENABLE_TIME_INDEX {
-            //TODO: check that the deletion here is exhastive and deletes all index permutations
             hc_time_index::remove_index(link.hash()?)?;
         } else {
             //Generate the link indexes that are possible for this LinkExpression
