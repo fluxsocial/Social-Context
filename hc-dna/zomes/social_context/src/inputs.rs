@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use hdk::prelude::*;
-use crate::{LinkExpression, IndexStrategy};
+use crate::LinkExpression;
+
 #[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
 pub struct ExpressionProof {
     pub signature: String,
@@ -25,6 +26,14 @@ pub struct GetLinks {
     pub limit: usize
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub enum IndexStrategy {
+    FullWithWildCard,
+    Full,
+    Simple,
+}
+
 #[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct AddLinkInput {
@@ -33,4 +42,8 @@ pub struct AddLinkInput {
 }
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
-pub struct UriTag(pub String);
+pub struct UpdateLinkInput {
+    pub source: LinkExpression,
+    pub target: LinkExpression,
+    pub index_strategy: IndexStrategy,
+}

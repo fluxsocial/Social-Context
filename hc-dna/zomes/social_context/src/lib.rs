@@ -83,13 +83,6 @@ pub fn get_links(input: GetLinks) -> ExternResult<GetLinksResponse> {
     ))
 }
 
-#[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
-pub struct UpdateLinkInput {
-    pub source: LinkExpression,
-    pub target: LinkExpression,
-    pub index_strategy: IndexStrategy,
-}
-
 #[hdk_extern]
 pub fn update_link(update_link_input: UpdateLinkInput) -> ExternResult<()> {
     SocialContextDNA::update_link(update_link_input).map_err(|err| WasmError::Host(err.to_string()))
@@ -100,21 +93,12 @@ pub fn remove_link(remove_link: LinkExpression) -> ExternResult<()> {
     SocialContextDNA::remove_link(remove_link).map_err(|err| WasmError::Host(err.to_string()))
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub enum IndexStrategy {
-    FullWithWildCard,
-    Full, 
-    Simple,
-}
-
 #[derive(Serialize, Deserialize, Debug, SerializedBytes)]
 pub struct SocialContextProperties {
     pub active_agent_duration_s: i64,
     pub enable_signals: bool,
     //TODO: lets set this per add_link zome call and not lock in each DNA to enabling or disabling this feature, there are cases where you want both time indexes and regular
     pub enable_time_index: bool,
-    pub index_strategy: String,
 }
 
 lazy_static! {
