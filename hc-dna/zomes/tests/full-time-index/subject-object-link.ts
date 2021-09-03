@@ -11,8 +11,15 @@ module.exports = (orchestrator) => {
         date.setTime(date.getTime() - dateOffset);
     
         //Test case where subject and object are given
-        await alice_sc_happ.cells[0].call("social_context", "add_link",  { data: {source: "subject-2", target: "Qmd6AZzLjfGWNAqWLGTGy354JC1bK26XNf7rTEEsJfv7Fe://Qmdrbjto9DDbUY8eMALPfmB35xh9m2Yce8ksk1NkMEZnQ9", predicate: null},
-        author: "test1", timestamp: new Date().toISOString(), proof: {signature: "sig", key: "key"} })
+        await alice_sc_happ.cells[0].call("social_context", "add_link",  {
+            linkExpression: {
+                data: {
+                    source: "subject-2", target: "Qmd6AZzLjfGWNAqWLGTGy354JC1bK26XNf7rTEEsJfv7Fe://Qmdrbjto9DDbUY8eMALPfmB35xh9m2Yce8ksk1NkMEZnQ9", predicate: null
+                },
+                author: "test1", timestamp: new Date().toISOString(), proof: {signature: "sig", key: "key"},
+            },
+            indexStrategy: { fullWithWildCard: null},
+        })
     
         //Get links on subject; expect back object & predicate
         const subj_links2 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
