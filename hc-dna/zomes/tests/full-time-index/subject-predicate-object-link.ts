@@ -12,8 +12,15 @@ module.exports = (orchestrator) => {
 		/// SIMPLE LINK TEST
 		 
 		//Test case where subject object and predicate are given
-		await alice_sc_happ.cells[0].call("social_context", "add_link",  {data: {source: "subject-full", target: "object-full", predicate: "predicate-full"},
-		author: "test1", timestamp: new Date().toISOString(), proof: {signature: "sig", key: "key"}})
+		await alice_sc_happ.cells[0].call("social_context", "add_link",  {
+            linkExpression: {
+                data: {
+                    source: "subject-full", target: "object-full", predicate: "predicate-full"
+                },
+                author: "test1", timestamp: new Date().toISOString(), proof: {signature: "sig", key: "key"},
+            },
+            indexStrategy: { fullWithWildCard: null},
+        })
 	
 		//Get links on subject; expect back object & predicate
 		const subj_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 

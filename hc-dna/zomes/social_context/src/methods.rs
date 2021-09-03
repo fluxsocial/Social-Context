@@ -5,14 +5,15 @@ use hdk::prelude::*;
 use crate::utils::{generate_link_path_permutations, get_link_permutation_by, LinkPermutation, get_wildcard};
 use crate::errors::{SocialContextError, SocialContextResult};
 use crate::{
-    GetLinks, LinkExpression, SocialContextDNA, UpdateLink, ACTIVE_AGENT_DURATION,
-    ENABLE_SIGNALS, ENABLE_TIME_INDEX, INDEX_STRAT, IndexStrategy, AgentReference
+    GetLinks, LinkExpression, SocialContextDNA, ACTIVE_AGENT_DURATION,
+    ENABLE_SIGNALS, ENABLE_TIME_INDEX, IndexStrategy, AgentReference,
+    AddLinkInput, UpdateLinkInput,
 };
 
 impl SocialContextDNA {
-    pub fn add_link(link: LinkExpression) -> SocialContextResult<()> {
+    pub fn add_link(input: AddLinkInput) -> SocialContextResult<()> {
         //Create the LinkExpression entry
-        create_entry(&link)?;
+        create_entry(&input.link_expression)?;
 
         //If signals are enabled from the dna properties
         if *ENABLE_SIGNALS {
@@ -36,10 +37,10 @@ impl SocialContextDNA {
                 .collect::<Vec<AgentPubKey>>();
             recent_agents.dedup();
             debug!("Social-Context.add_link: Sending signal to agents: {:#?}", recent_agents);
-            remote_signal(link.clone().get_sb()?, recent_agents)?;
+            remote_signal(input.link_expression.clone().get_sb()?, recent_agents)?;
         };
         //Index the LinkExpression so its discoverable by source, predicate, target queries
-        SocialContextDNA::index_link(link)?;
+        SocialContextDNA::index_link(input)?;
         Ok(())
     }
 
@@ -101,29 +102,28 @@ impl SocialContextDNA {
         }
     }
 
-    pub fn index_link(link: LinkExpression) -> SocialContextResult<()> {
-        //Check the INDEX_STRATEGY defined in the DNA properties and generate appropriate number of link permutations
-        //TODO: link strategy should be defined per zome call and not derived from DNA properties
-        let link_indexes = match *INDEX_STRAT {
+    pub fn index_link(input: AddLinkInput) -> SocialContextResult<()> {
+        //Check the index_strategy passed in the call and generate appropriate number of link permutations
+        let link_indexes = match input.index_strategy {
             //Index strategy is full so we generate all possible indexes to fufill all query possibilities +
             //add another wildcard index to make this discoverable when querying with no source, predicate or target 
             IndexStrategy::FullWithWildCard => {
-                let mut perm = generate_link_path_permutations(&link.data)?;
+                let mut perm = generate_link_path_permutations(&input.link_expression.data)?;
                 let wildcard = get_wildcard();
                 perm.push(LinkPermutation::new(wildcard.to_string(), wildcard.to_string()));
                 perm
             },
-            IndexStrategy::Full => generate_link_path_permutations(&link.data)?,
+            IndexStrategy::Full => generate_link_path_permutations(&input.link_expression.data)?,
             //Index strategy is simple so we only index using source + predicate meaning this LinkExpression will only be discoverable if a query with 
             //source + predicate matching that of the LinkExpression
             IndexStrategy::Simple => vec![LinkPermutation::new(
-                link.data
+                input.link_expression.data
                     .source
                     .clone()
                     .ok_or(SocialContextError::RequestError(
                         "Expected source with simple index strategy",
                     ))?,
-                link.data
+                input.link_expression.data
                     .predicate
                     .clone()
                     .ok_or(SocialContextError::RequestError(
@@ -136,10 +136,10 @@ impl SocialContextDNA {
         for link_index in link_indexes {
             if *ENABLE_TIME_INDEX {
                 //Create index using hc_time_index crate and put it into a time tree to allow for retreival of links by time as well as source, predicate, target (IndexStrategy dependant)
-                hc_time_index::index_entry(link_index.root_index, link.clone(), link_index.tag)?;
+                hc_time_index::index_entry(link_index.root_index, input.link_expression.clone(), link_index.tag)?;
             } else {
                 //Create basic index (link) which links from Path() entry -> link_index.tag -> LinkExpression 
-                let link_hash = hash_entry(&link)?;
+                let link_hash = hash_entry(&input.link_expression)?;
                 let path_source = Path::from(link_index.root_index);
                 path_source.ensure()?;
                 create_link(path_source.hash()?, link_hash.clone(), link_index.tag)?;
@@ -258,9 +258,13 @@ impl SocialContextDNA {
         Ok(())
     }
 
-    pub fn update_link(update_link: UpdateLink) -> SocialContextResult<()> {
-        SocialContextDNA::remove_link(update_link.source)?;
-        SocialContextDNA::add_link(update_link.target)?;
+    pub fn update_link(update_link_input: UpdateLinkInput) -> SocialContextResult<()> {
+        SocialContextDNA::remove_link(update_link_input.source)?;
+        let add_link_input = AddLinkInput {
+            link_expression: update_link_input.target,
+            index_strategy: update_link_input.index_strategy,
+        };
+        SocialContextDNA::add_link(add_link_input)?;
         Ok(())
     }
 }
