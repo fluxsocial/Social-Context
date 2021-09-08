@@ -4,15 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "RUST_LOG=debug TRYORAMA_LOG_LEVEL=debug TRYORAMA_HOLOCHAIN_PATH=\"holochain\" TIMEOUT=40000 TRYORAMA_ZOME_CALL_TIMEOUT_MS=100000 TRYORAMA_CONDUCTOR_TIMEOUT_MS=100000 ts-node index.ts | tap-diff",
-    "test-signals": "RUST_LOG=debug TRYORAMA_LOG_LEVEL=debug TRYORAMA_HOLOCHAIN_PATH=\"holochain\" TIMEOUT=40000 TRYORAMA_ZOME_CALL_TIMEOUT_MS=100000 TRYORAMA_CONDUCTOR_TIMEOUT_MS=100000 ts-node signal-test.ts | tap-diff",
-    "test-basic": "RUST_LOG=debug TRYORAMA_LOG_LEVEL=debug TRYORAMA_HOLOCHAIN_PATH=\"holochain\" TIMEOUT=40000 TRYORAMA_ZOME_CALL_TIMEOUT_MS=100000 TRYORAMA_CONDUCTOR_TIMEOUT_MS=100000 ts-node basic-test.ts | tap-diff",
-    "test-pagination": "RUST_LOG=debug,holochain_p2p::spawn::actor=error,holochain::core::workflow::integrate_dht_ops_workflow=error,holochain::core::workflow::publish_dht_ops_workflow=error,wasmer_compiler_cranelift::translator::func_translator=error,hc_time_index::dfs::methods=error TRYORAMA_LOG_LEVEL=debug TRYORAMA_HOLOCHAIN_PATH=\"holochain\" TIMEOUT=40000 TRYORAMA_ZOME_CALL_TIMEOUT_MS=100000 TRYORAMA_CONDUCTOR_TIMEOUT_MS=100000 ts-node pagination-test.ts | tap-diff",
+    "test": "TRYORAMA_HOLOCHAIN_PATH=\"holochain\" TIMEOUT=40000 TRYORAMA_ZOME_CALL_TIMEOUT_MS=100000 TRYORAMA_CONDUCTOR_TIMEOUT_MS=100000 ts-node index.ts | tap-diff",
+    "test-signals": "TRYORAMA_HOLOCHAIN_PATH=\"holochain\" TIMEOUT=40000 TRYORAMA_ZOME_CALL_TIMEOUT_MS=100000 TRYORAMA_CONDUCTOR_TIMEOUT_MS=100000 ts-node signal-test.ts | tap-diff",
+    "test-basic": "TRYORAMA_HOLOCHAIN_PATH=\"holochain\" TIMEOUT=40000 TRYORAMA_ZOME_CALL_TIMEOUT_MS=100000 TRYORAMA_CONDUCTOR_TIMEOUT_MS=100000 ts-node basic-test.ts | tap-diff",
+    "test-basic-full-index": "TRYORAMA_HOLOCHAIN_PATH=\"holochain\" TIMEOUT=40000 TRYORAMA_ZOME_CALL_TIMEOUT_MS=100000 TRYORAMA_CONDUCTOR_TIMEOUT_MS=100000 ts-node basic-full-index-test.ts | tap-diff",
+    "test-pagination": "RUST_LOG=error,holochain_p2p::spawn::actor=error,holochain::core::workflow::integrate_dht_ops_workflow=error,holochain::core::workflow::publish_dht_ops_workflow=error,wasmer_compiler_cranelift::translator::func_translator=error,hc_time_index::dfs::methods=error TRYORAMA_HOLOCHAIN_PATH=\"holochain\" TIMEOUT=40000 TRYORAMA_ZOME_CALL_TIMEOUT_MS=100000 TRYORAMA_CONDUCTOR_TIMEOUT_MS=100000 ts-node pagination-test.ts | tap-diff",
     "build-test": "cd ../../ && cp workdir/dna_time_index.yaml workdir/dna.yaml && CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown && hc dna pack workdir && cd zomes/tests && npm test",
     "build-test-signals": "cd ../../ && cp workdir/dna_signals.yaml workdir/dna.yaml && CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown && hc dna pack workdir && cd zomes/tests && npm run test-signals",
     "build-test-basic": "cd ../../ && cp workdir/dna_basic.yaml workdir/dna.yaml && CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown && hc dna pack workdir && cd zomes/tests && npm run test-basic",
+    "build-test-basic-full-index": "cd ../../ && cp workdir/dna_basic_full_index.yaml workdir/dna.yaml && CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown && hc dna pack workdir && cd zomes/tests && npm run test-basic-full-index",
     "build-test-pagination": "cd ../../ && cp workdir/dna_signals.yaml workdir/dna.yaml && CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown && hc dna pack workdir && cd zomes/tests && npm run test-pagination",
-    "build-test-all": "npm run build-test && npm run build-test-basic && npm run build-test-signals && npm run build-test-pagination"
+    "build-test-all": "npm run build-test && npm run build-test-basic && npm run build-test-signals && npm run build-test-pagination && npm run build-test-basic-full-index"
   },
   "author": "",
   "license": "ISC",

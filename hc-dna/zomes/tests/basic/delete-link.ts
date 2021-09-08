@@ -22,9 +22,14 @@ module.exports = (orchestrator) => {
         await alice_sc_happ.cells[0].call("social_context", "add_link", link_data);
     
         console.log("Getting links");
-        const subj_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+        const subj_pred_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
           {source: "subject-full", target: null, predicate: "predicate-full", from: date.toISOString(), until: new Date().toISOString(), limit: 10})
-        t.deepEqual(subj_links.length, 1);
+        t.deepEqual(subj_pred_links.length, 1);
+
+        //There are no links for source/target and other permutations, so no need to check after remove_link.
+        const subj_obj_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
+          {source: "subject-full", target: "object-full", predicate: null, from: date.toISOString(), until: new Date().toISOString(), limit: 10})
+        t.deepEqual(subj_obj_links.length, 0);
         
         console.log("Removing link");
         await alice_sc_happ.cells[0].call("social_context", "remove_link", link_data);

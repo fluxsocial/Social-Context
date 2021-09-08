@@ -234,11 +234,13 @@ impl SocialContextDNA {
             ))?;
 
         if *ENABLE_TIME_INDEX {
-            //TODO: check that the deletion here is exhastive and deletes all index permutations
             hc_time_index::remove_index(link.hash()?)?;
         } else {
             //Generate the link indexes that are possible for this LinkExpression
-            let link_indexes = generate_link_path_permutations(&link.data)?;
+            let mut link_indexes = generate_link_path_permutations(&link.data)?;
+            let wildcard = get_wildcard();
+            link_indexes.push(LinkPermutation::new(wildcard.to_string(), wildcard.to_string()));
+
             let link_hash = link.hash()?;
             //For each permutation get links on source and if exists then delete where target of link == target LinkExpression to be deleted
             for link_index in link_indexes {
