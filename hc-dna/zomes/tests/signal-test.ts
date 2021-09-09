@@ -42,7 +42,9 @@ orchestrator.registerScenario("basic link signal testing", async (s, t) => {
                 data: {source: "subject-full", target: "object-full", predicate: "predicate-full"},
                 author: "test1", timestamp: new Date().toISOString(), proof: {signature: "sig", key: "key"},
              },
-             indexStrategy: { full: null },
+             indexStrategy: {
+                 type: "Full"
+             },
         }
     )
     //Sleep to give time for signals to arrive

@@ -18,7 +18,9 @@ module.exports = (orchestrator) => {
                 timestamp: now, 
                 proof: {signature: "sig", key: "key"},
             },
-            indexStrategy: { simple: null },
+            indexStrategy: {
+                type: "Simple"
+            },
         };
     
         //Create link

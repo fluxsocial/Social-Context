@@ -59,7 +59,9 @@ orchestrator.registerScenario("pagination testing", async (s, t) => {
             "add_link",
             {
                 linkExpression: linkData[step],
-                indexStrategy: { full: null },
+                indexStrategy: {
+                    type: "Full"
+                },
             }
         )
     }

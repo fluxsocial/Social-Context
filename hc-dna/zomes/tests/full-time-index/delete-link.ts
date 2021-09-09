@@ -15,7 +15,9 @@ module.exports = (orchestrator) => {
                 data: {source: "subject-full", target: "object-full", predicate: "predicate-full"},
                 author: "test1", timestamp: new Date().toISOString(), proof: {signature: "sig", key: "key"}
             },
-            indexStrategy: { fullWithWildCard: null},
+            indexStrategy: {
+                type: "FullWithWildCard"
+            },
         };
     
         //Create link

@@ -14,7 +14,9 @@ module.exports = (orchestrator) => {
                 timestamp: now, 
                 proof: {signature: "sig", key: "key"},
             },
-            indexStrategy: { simple: null },
+            indexStrategy: {
+                type: "Simple"
+            },
         })
     
         //Get links on subject and predicate; expect back object

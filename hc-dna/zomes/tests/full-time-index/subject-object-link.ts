@@ -18,7 +18,9 @@ module.exports = (orchestrator) => {
                 },
                 author: "test1", timestamp: new Date().toISOString(), proof: {signature: "sig", key: "key"},
             },
-            indexStrategy: { fullWithWildCard: null},
+            indexStrategy: {
+                type: "FullWithWildCard"
+            },
         })
     
         //Get links on subject; expect back object & predicate

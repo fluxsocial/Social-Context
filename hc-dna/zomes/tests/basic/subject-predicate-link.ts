@@ -17,7 +17,9 @@ module.exports = (orchestrator) => {
                 data: {source: "subject-3", target: null, predicate: "predicate-3"},
                 author: "test1", timestamp: now, proof: {signature: "sig", key: "key"}
             },
-            indexStrategy: { simple: null },
+            indexStrategy: {
+                type: "Simple"
+            },
         })
     
         //Get links on subject

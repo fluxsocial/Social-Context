@@ -25,7 +25,9 @@ module.exports = (orchestrator) => {
                         },
                         author: "test1", timestamp: now, proof: {signature: "sig", key: "key"}
                     },
-                    indexStrategy: { simple: null },
+                    indexStrategy: {
+                        type: "Simple"
+                    },
                 }
             );
         } catch(err) {

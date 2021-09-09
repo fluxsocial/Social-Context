@@ -24,7 +24,9 @@ module.exports = (orchestrator) => {
             "add_link",
             {
                 linkExpression: link_data,
-                indexStrategy: { fullWithWildCard: null },
+                indexStrategy: {
+                    type: "FullWithWildCard"
+                },
             }
         );
     

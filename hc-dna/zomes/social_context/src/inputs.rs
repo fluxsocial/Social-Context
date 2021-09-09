@@ -27,7 +27,7 @@ pub struct GetLinks {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
 pub enum IndexStrategy {
     FullWithWildCard,
     Full,
