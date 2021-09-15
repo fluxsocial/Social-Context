@@ -56,8 +56,8 @@ fn recv_remote_signal(signal: SerializedBytes) -> ExternResult<()> {
 }
 
 #[hdk_extern]
-pub fn add_link(add_link_data: LinkExpression) -> ExternResult<()> {
-    SocialContextDNA::add_link(add_link_data).map_err(|err| WasmError::Host(err.to_string()))
+pub fn add_link(add_link_input: AddLinkInput) -> ExternResult<()> {
+    SocialContextDNA::add_link(add_link_input).map_err(|err| WasmError::Host(err.to_string()))
 }
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
@@ -83,27 +83,14 @@ pub fn get_links(input: GetLinks) -> ExternResult<GetLinksResponse> {
     ))
 }
 
-#[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
-pub struct UpdateLink {
-    pub source: LinkExpression,
-    pub target: LinkExpression,
-}
-
 #[hdk_extern]
-pub fn update_link(update_link: UpdateLink) -> ExternResult<()> {
-    SocialContextDNA::update_link(update_link).map_err(|err| WasmError::Host(err.to_string()))
+pub fn update_link(update_link_input: UpdateLinkInput) -> ExternResult<()> {
+    SocialContextDNA::update_link(update_link_input).map_err(|err| WasmError::Host(err.to_string()))
 }
 
 #[hdk_extern]
 pub fn remove_link(remove_link: LinkExpression) -> ExternResult<()> {
     SocialContextDNA::remove_link(remove_link).map_err(|err| WasmError::Host(err.to_string()))
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub enum IndexStrategy {
-    FullWithWildCard,
-    Full, 
-    Simple,
 }
 
 #[derive(Serialize, Deserialize, Debug, SerializedBytes)]
@@ -112,7 +99,6 @@ pub struct SocialContextProperties {
     pub enable_signals: bool,
     //TODO: lets set this per add_link zome call and not lock in each DNA to enabling or disabling this feature, there are cases where you want both time indexes and regular
     pub enable_time_index: bool,
-    pub index_strategy: String,
 }
 
 lazy_static! {
@@ -139,13 +125,5 @@ lazy_static! {
         let properties = SocialContextProperties::try_from(host_dna_config)
             .expect("Could not convert zome dna properties to SocialContextProperties. Please ensure that your dna properties contains a SocialContextProperties field.");
         properties.enable_time_index
-    };
-    pub static ref INDEX_STRAT: IndexStrategy = {
-        let host_dna_config = zome_info()
-            .expect("Could not get zome configuration")
-            .properties;
-        let properties = SocialContextProperties::try_from(host_dna_config)
-            .expect("Could not convert zome dna properties to SocialContextProperties. Please ensure that your dna properties contains a SocialContextProperties field.");
-        IndexStrategy::try_from(properties.index_strategy).expect("Could not get index strategy from string supplied in index_strategy property")
     };
 }

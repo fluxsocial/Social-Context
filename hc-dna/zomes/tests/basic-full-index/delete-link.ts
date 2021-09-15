@@ -19,7 +19,16 @@ module.exports = (orchestrator) => {
         };
     
         //Create link
-        await alice_sc_happ.cells[0].call("social_context", "add_link", link_data);
+        await alice_sc_happ.cells[0].call(
+            "social_context",
+            "add_link",
+            {
+                linkExpression: link_data,
+                indexStrategy: {
+                    type: "FullWithWildCard"
+                },
+            }
+        );
     
         //Getting links after add
         const subj_pred_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 

@@ -17,12 +17,17 @@ module.exports = (orchestrator) => {
                 "social_context",
                 "add_link",
                 {
-                    data: {
-                        source: "subject-2",
-                        target: "Qmd6AZzLjfGWNAqWLGTGy354JC1bK26XNf7rTEEsJfv7Fe://Qmdrbjto9DDbUY8eMALPfmB35xh9m2Yce8ksk1NkMEZnQ9",
-                        predicate: null
+                    linkExpression: {
+                        data: {
+                            source: "subject-2",
+                            target: "Qmd6AZzLjfGWNAqWLGTGy354JC1bK26XNf7rTEEsJfv7Fe://Qmdrbjto9DDbUY8eMALPfmB35xh9m2Yce8ksk1NkMEZnQ9",
+                            predicate: null
+                        },
+                        author: "test1", timestamp: now, proof: {signature: "sig", key: "key"}
                     },
-                    author: "test1", timestamp: now, proof: {signature: "sig", key: "key"}
+                    indexStrategy: {
+                        type: "Simple"
+                    },
                 }
             );
         } catch(err) {

@@ -12,7 +12,7 @@ The ad4m language defined here will call the included holochain DNA (found in `h
 - `active_agent_duration_s`: Length of time that an agent is considered online for after adding an `active_agent` link pointing to their agent address.<br>
 - `enable_signals`: Determines if holochain signals should be sent to `active_agent(s)` when adding a link<br>
 - `enable_time_index`: Determines if links should be added to a time index that makes links queryable between time bounds, see [LinkQuery](https://github.com/juntofoundation/Social-Context/blob/16f99a5f8c8c97febca1876968a2f1f6d37a0fa8/hc-dna/zomes/social_context/src/inputs.rs#L16)<br>
-- `index_strategy`: Determines what values from the triple are indexed and thus queryable in the future. Options are `FullWithWildCard`, `Full` & `Simple`. Full with wildcard will make links discoverable by subject, predicate, target & *. Full will make discoverable by subject, predicate, target. Simple by only discoverable subject.<br>
+- `index_strategy`: Determines what values from the triple are indexed and thus queryable in the future. Options are `FullWithWildCard`, `Full` & `Simple`. Full with wildcard will make links discoverable by subject, predicate, target & *. Full will make discoverable by subject, predicate, target. Simple by only discoverable subject. It's an input parameter of `add_link` zome external function and may be different for each call.<br>
 
 # How is this used in Junto?
 

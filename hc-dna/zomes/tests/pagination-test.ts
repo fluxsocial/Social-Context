@@ -54,7 +54,16 @@ orchestrator.registerScenario("pagination testing", async (s, t) => {
     const numLinks = 35;
     let {out: linkData, timestamps} = constructLinkData(numLinks, 11111);
     for (let step = 0; step < numLinks; step++) {
-        await alice_sc_happ.cells[0].call("social_context", "add_link", linkData[step])
+        await alice_sc_happ.cells[0].call(
+            "social_context",
+            "add_link",
+            {
+                linkExpression: linkData[step],
+                indexStrategy: {
+                    type: "Full"
+                },
+            }
+        )
     }
     //Get all 35 messages and check that it works correctly
     const allLinks = await alice_sc_happ.cells[0].call("social_context", "get_links", {source: "subject", target: null, predicate: "predicate", fromDate: now.toISOString(), untilDate: unixDate, limit: 35})

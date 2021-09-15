@@ -10,11 +10,18 @@ module.exports = (orchestrator) => {
         var date = new Date();
         date.setTime(date.getTime() - dateOffset);
     
-        let link_data = { data: {source: "subject-full", target: "object-full", predicate: "predicate-full"},
-        author: "test1", timestamp: new Date().toISOString(), proof: {signature: "sig", key: "key"}};
+        let add_link_input = {
+            linkExpression: {
+                data: {source: "subject-full", target: "object-full", predicate: "predicate-full"},
+                author: "test1", timestamp: new Date().toISOString(), proof: {signature: "sig", key: "key"}
+            },
+            indexStrategy: {
+                type: "FullWithWildCard"
+            },
+        };
     
         //Create link
-        await alice_sc_happ.cells[0].call("social_context", "add_link", link_data);
+        await alice_sc_happ.cells[0].call("social_context", "add_link", add_link_input);
     
         console.log("Getting links");
         
@@ -24,7 +31,7 @@ module.exports = (orchestrator) => {
         t.deepEqual(subj_links.length, 1);
     
         console.log("Removing link");
-        await alice_sc_happ.cells[0].call("social_context", "remove_link", link_data);
+        await alice_sc_happ.cells[0].call("social_context", "remove_link", add_link_input.linkExpression);
         await sleep(1000);
     
         console.log("Getting links");

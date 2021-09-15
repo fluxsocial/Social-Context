@@ -12,8 +12,15 @@ module.exports = (orchestrator) => {
     
         //Test case where subject and predicate are given
         let now = new Date().toISOString();
-        await alice_sc_happ.cells[0].call("social_context", "add_link",  { data: {source: "subject-3", target: null, predicate: "predicate-3"},
-        author: "test1", timestamp: now, proof: {signature: "sig", key: "key"} })
+        await alice_sc_happ.cells[0].call("social_context", "add_link",  {
+            linkExpression: {
+                data: {source: "subject-3", target: null, predicate: "predicate-3"},
+                author: "test1", timestamp: now, proof: {signature: "sig", key: "key"}
+            },
+            indexStrategy: {
+                type: "Simple"
+            },
+        })
     
         //Get links on subject
         const subj_links3 = await alice_sc_happ.cells[0].call("social_context", "get_links", 
