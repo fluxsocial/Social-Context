@@ -1,12 +1,12 @@
 {
   "name": "social-context",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "An ACAI Language for managing a perspective on holochain",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build-icons": "rollup -c rollup.config.icons.js",
-    "build-dna": "cd hc-dna && nix-shell --run ./build.sh && cd ..",
+    "build-dna": "cd hc-dna && nix-shell ../default.nix --run ./build.sh && cd ..",
     "build": "npm run build-dna && npm run build-icons && tsc && rollup -c",
     "dev": "tsc && rollup -c rollup.config.icons.js && rollup -c -w"
   },

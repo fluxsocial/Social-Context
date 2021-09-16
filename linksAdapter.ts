@@ -1,4 +1,5 @@
 import type { Expression, LinksAdapter, NewLinksObserver, HolochainLanguageDelegate, LanguageContext, LinkQuery } from "@perspect3vism/ad4m";
+import type { DID } from "@perspect3vism/ad4m/lib/DID";
 import { DNA_NICK } from "./dna";
 
 const DEFAULT_GET_LINKS_LIMIT = 50;
@@ -18,6 +19,10 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
 
   public(): boolean {
     return false;
+  }
+
+  async others(): Promise<DID[]> {
+    return []
   }
 
   async addActiveAgentLink(hcDna: HolochainLanguageDelegate): Promise<any> {
