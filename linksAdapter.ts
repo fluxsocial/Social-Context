@@ -46,7 +46,13 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
 
   async addLink(link: Expression): Promise<void> {
     const data = prepareExpressionLink(link);
-    await this.socialContextDna.call(DNA_NICK, "social_context", "add_link", data);
+    const input = {
+      linkExpression: data,
+      indexStrategy: {
+          type: "FullWithWildCard"
+      },
+    }
+    await this.socialContextDna.call(DNA_NICK, "social_context", "add_link", input);
   }
 
   async updateLink(
@@ -55,11 +61,18 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
   ): Promise<void> {
     const source_link = prepareExpressionLink(oldLinkExpression);
     const target_link = prepareExpressionLink(newLinkExpression);
+    const input = {
+      source: source_link,
+      target: target_link,
+      indexStrategy: {
+        type: "FullWithWildCard"
+      },
+    };
     await this.socialContextDna.call(
       DNA_NICK,
       "social_context",
       "update_link",
-      { source: source_link, target: target_link }
+      input
     );
   }
 

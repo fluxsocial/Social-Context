@@ -42,6 +42,7 @@ pub struct AddLinkInput {
 }
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdateLinkInput {
     pub source: LinkExpression,
     pub target: LinkExpression,
