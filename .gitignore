@@ -11,3 +11,5 @@ build
 hc-dna/workdir/social-context.dna
 
 release/*
+
+.DS_Store
