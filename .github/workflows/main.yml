@@ -29,7 +29,7 @@ jobs:
         cp ./.github/nix.conf ~/.config/nix/
     - uses: cachix/cachix-action@v10
       with:
-        name: holochain-ci
+        name: perspect3vism
         # authToken: '${{ secrets.CACHIX_HOLOCHAIN_CI }}'
     - name: Prepare Nix environment
       run: nix-shell --command "echo Completed"
