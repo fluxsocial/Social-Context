@@ -17,7 +17,7 @@ impl SocialContextDNA {
 
         //If signals are enabled from the dna properties
         if *ENABLE_SIGNALS {
-            let now = sys_time()?;
+            let now = sys_time()?.as_seconds_and_nanos();
             let now = DateTime::<Utc>::from_utc(
                 NaiveDateTime::from_timestamp(now.0, now.1),
                 Utc,
@@ -45,7 +45,7 @@ impl SocialContextDNA {
     }
 
     pub fn add_active_agent_link() -> SocialContextResult<Option<DateTime<Utc>>> {
-        let now = sys_time()?;
+        let now = sys_time()?.as_seconds_and_nanos();
         let now = DateTime::<Utc>::from_utc(
             NaiveDateTime::from_timestamp(now.0, now.1),
             Utc,
@@ -168,7 +168,7 @@ impl SocialContextDNA {
             } else {
                 //fromDate & untilDate not supplied so we will try to get all LinkExpression(s) from now -> unix epoch
                 //This will return all links since the hc_time_index crate does not support indexing before unix epoch currently
-                let now = sys_time()?;
+                let now = sys_time()?.as_seconds_and_nanos();
                 let now = DateTime::<Utc>::from_utc(
                     NaiveDateTime::from_timestamp(now.0, now.1),
                     Utc,
