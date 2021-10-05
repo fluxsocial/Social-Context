@@ -1,6 +1,6 @@
+use crate::LinkExpression;
 use chrono::{DateTime, Utc};
 use hdk::prelude::*;
-use crate::LinkExpression;
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
 pub struct ExpressionProof {
@@ -23,7 +23,7 @@ pub struct GetLinks {
     pub from_date: Option<DateTime<Utc>>,
     #[serde(rename(serialize = "untilDate", deserialize = "untilDate"))]
     pub until_date: Option<DateTime<Utc>>,
-    pub limit: usize
+    pub limit: usize,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

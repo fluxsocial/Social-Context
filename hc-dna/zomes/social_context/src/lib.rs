@@ -12,8 +12,11 @@ mod validation;
 use inputs::*;
 pub use validation::*;
 
-
-entry_defs![Path::entry_def(), LinkExpression::entry_def(), AgentReference::entry_def()];
+entry_defs![
+    Path::entry_def(),
+    LinkExpression::entry_def(),
+    AgentReference::entry_def()
+];
 
 #[hdk_entry(id = "link_data", visibility = "public")]
 #[serde(rename_all = "camelCase")]
@@ -67,10 +70,9 @@ pub struct AddActiveAgentLinkResponse {
 
 #[hdk_extern]
 pub fn add_active_agent_link(_: ()) -> ExternResult<AddActiveAgentLinkResponse> {
-    let res = SocialContextDNA::add_active_agent_link().map_err(|err| WasmError::Host(err.to_string()))?;
-    Ok(AddActiveAgentLinkResponse {
-        existing: res
-    })
+    let res = SocialContextDNA::add_active_agent_link()
+        .map_err(|err| WasmError::Host(err.to_string()))?;
+    Ok(AddActiveAgentLinkResponse { existing: res })
 }
 
 #[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
