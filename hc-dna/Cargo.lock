@@ -261,7 +261,6 @@ checksum = "ab5ef0d4909ef3724cc8cce6ccc8572c5c817592e9285f5464f8e86f8bd3726e"
 [[package]]
 name = "hc_time_index"
 version = "0.1.0"
-source = "git+https://github.com/holochain-open-dev/holochain-time-index?branch=main#b24f7b51059bfddf97a8ac5849687b7ad7a8e770"
 dependencies = [
  "chrono",
  "hdk",
