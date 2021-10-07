@@ -1,0 +1,7 @@
+{
+    "name": "Social Context",
+    "description": "Holochain based LinkLanguage. First full implementation of a LinkLanguage, for collaborative Neighbourhoods where every agent can add links. No membrane. Basic template for all custom Neighbourhoods in this first iteration of the Perspect3vism test network.",
+    "possibleTemplateParams": [ "uuid", "name", "description" ],
+    "sourceCodeLink": "https://github.com/juntofoundation/Social-Context'",
+    "bundle": "build/bundle.js"
+}
