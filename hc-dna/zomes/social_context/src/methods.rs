@@ -199,7 +199,6 @@ impl SocialContextDNA {
         link_tag: Option<LinkTag>,
     ) -> SocialContextResult<Vec<LinkExpression>> {
         Ok(hdk::link::get_links(base, link_tag)?
-            .into_inner()
             .into_iter()
             .map(|link| match get(link.target, GetOptions::latest())? {
                 Some(chunk) => Ok(Some(
@@ -246,7 +245,6 @@ impl SocialContextDNA {
             for link_index in link_indexes {
                 let path_source = Path::from(link_index.root_index);
                 hdk::link::get_links(path_source.hash()?, Some(link_index.tag))?
-                    .into_inner()
                     .into_iter()
                     .filter(|link| link.target == link_hash)
                     .map(|val| {
