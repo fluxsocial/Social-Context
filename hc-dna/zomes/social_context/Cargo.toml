@@ -17,5 +17,5 @@ hc_time_index = { git = "https://github.com/holochain-open-dev/holochain-time-in
 thiserror = "1.0.20"
 hex = "*"
 
-hdk = "0.0.110"
-holo_hash = "0.0.5"
+hdk = "0.0.115"
+holo_hash = "0.0.12"

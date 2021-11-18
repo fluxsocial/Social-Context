@@ -37,7 +37,7 @@ pub struct SocialContextDNA;
 #[hdk_extern]
 fn init(_: ()) -> ExternResult<InitCallbackResult> {
     let mut functions: GrantedFunctions = BTreeSet::new();
-    functions.insert((zome_info()?.zome_name, "recv_remote_signal".into()));
+    functions.insert((dna_info()?.zome_names[0].clone(), "recv_remote_signal".into()));
 
     //Create open cap grant to allow agents to send signals of links to each other
     create_cap_grant(CapGrantEntry {
@@ -103,7 +103,7 @@ pub struct SocialContextProperties {
 
 lazy_static! {
     pub static ref ACTIVE_AGENT_DURATION: chrono::Duration = {
-        let host_dna_config = zome_info()
+        let host_dna_config = dna_info()
             .expect("Could not get zome configuration")
             .properties;
         let properties = SocialContextProperties::try_from(host_dna_config)
@@ -111,7 +111,7 @@ lazy_static! {
         chrono::Duration::seconds(properties.active_agent_duration_s)
     };
     pub static ref ENABLE_SIGNALS: bool = {
-        let host_dna_config = zome_info()
+        let host_dna_config = dna_info()
             .expect("Could not get zome configuration")
             .properties;
         let properties = SocialContextProperties::try_from(host_dna_config)
@@ -119,7 +119,7 @@ lazy_static! {
         properties.enable_signals
     };
     pub static ref ENABLE_TIME_INDEX: bool = {
-        let host_dna_config = zome_info()
+        let host_dna_config = dna_info()
             .expect("Could not get zome configuration")
             .properties;
         let properties = SocialContextProperties::try_from(host_dna_config)
