@@ -2,8 +2,6 @@ import type { Expression, LinksAdapter, NewLinksObserver, HolochainLanguageDeleg
 import type { DID } from "@perspect3vism/ad4m/lib/DID";
 import { DNA_NICK } from "./dna";
 
-const DEFAULT_GET_LINKS_LIMIT = 50;
-
 export class JuntoSocialContextLinkAdapter implements LinksAdapter {
   socialContextDna: HolochainLanguageDelegate;
   linkCallback?: NewLinksObserver
@@ -103,7 +101,6 @@ export class JuntoSocialContextLinkAdapter implements LinksAdapter {
     if (link_query.untilDate) {
       link_query.untilDate = link_query.untilDate.toISOString();
     }
-    link_query.limit = DEFAULT_GET_LINKS_LIMIT;
     const links = await this.socialContextDna.call(
       DNA_NICK,
       "social_context",
