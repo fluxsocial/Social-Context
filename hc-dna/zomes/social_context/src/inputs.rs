@@ -23,7 +23,7 @@ pub struct GetLinks {
     pub from_date: Option<DateTime<Utc>>,
     #[serde(rename(serialize = "untilDate", deserialize = "untilDate"))]
     pub until_date: Option<DateTime<Utc>>,
-    pub limit: usize
+    pub limit: Option<usize>
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

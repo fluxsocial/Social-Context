@@ -1,6 +1,6 @@
 {
   "name": "social-context",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "An ACAI Language for managing a perspective on holochain",
   "main": "index.js",
   "scripts": {

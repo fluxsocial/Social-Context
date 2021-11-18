@@ -163,11 +163,11 @@ impl SocialContextDNA {
                     get_links.until_date.unwrap(),
                     Some(link_query_elements.tag),
                     SearchStrategy::Dfs,
-                    Some(get_links.limit),
+                    get_links.limit,
                 )?)
             } else {
                 //fromDate & untilDate not supplied so we will try to get all LinkExpression(s) from now -> unix epoch
-                //This will return all links since the hc_time_index crate does not support indexing before unix epoch currently
+                //This will return all links, since the hc_time_index crate does not support indexing before unix epoch currently
                 let now = sys_time()?.as_seconds_and_nanos();
                 let now = DateTime::<Utc>::from_utc(
                     NaiveDateTime::from_timestamp(now.0, now.1),
@@ -185,7 +185,7 @@ impl SocialContextDNA {
                     now,
                     Some(link_query_elements.tag),
                     SearchStrategy::Bfs,
-                    None,
+                    get_links.limit,
                 )?)
             }
         } else {
