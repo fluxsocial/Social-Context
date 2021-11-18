@@ -25,7 +25,7 @@ cp ./hc-dna/workdir/social-context.dna ./release/full_index/social-context.dna
 
 
 
-echo "Create release with Partial index (no wildcard) + signals + time index..."
+echo "Create release with full index + signals + time index..."
 
 #Get new dna.yaml with correct props & build language
 cp ./hc-dna/workdir/dna_signals.yaml ./hc-dna/workdir/dna.yaml
