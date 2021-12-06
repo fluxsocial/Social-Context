@@ -7,50 +7,63 @@ then
     exit
 fi
 
-echo "Creating three releases of Social-Context inside ./release"
+echo "Creating four releases of Social-Context inside ./release"
 
 [ ! -d "./release" ] && mkdir "./release"
 
-echo "Create release with full index & no signals or time index..."
+echo "Create release with no features enabled..."
 
 #Get new dna.yaml with correct props & build language
-cp ./hc-dna/workdir/dna_basic_full_index.yaml ./hc-dna/workdir/dna.yaml
+cp ./hc-dna/workdir/dna_basic.yaml ./hc-dna/workdir/dna.yaml
 npm install && npm run build
 
-#Check if full_index directory exists, if not create
-[ ! -d "./release/full_index" ] && mkdir "./release/full_index"
+#Check if basic_index directory exists, if not create
+[ ! -d "./release/basic" ] && mkdir "./release/basic"
 
 #Copy the build files to the release dir
-cp ./build/bundle.js ./release/full_index/bundle.js
-cp ./hc-dna/workdir/social-context.dna ./release/full_index/social-context.dna
+cp ./build/bundle.js ./release/basic/bundle.js
+cp ./hc-dna/workdir/social-context.dna ./release/basic/social-context.dna
 
 
 
-echo "Create release with full index + signals + time index..."
+echo "Create release with all features enabled..."
 
 #Get new dna.yaml with correct props & build language
-cp ./hc-dna/workdir/dna_signals.yaml ./hc-dna/workdir/dna.yaml
+cp ./hc-dna/workdir/dna_full.yaml ./hc-dna/workdir/dna.yaml
 npm install && npm run build
 
-#Create the signal release dir
-[ ! -d "./release/signal" ] && mkdir "./release/signal"
+#Create the full_features release dir
+[ ! -d "./release/full_features" ] && mkdir "./release/full_features"
 
 #Copy the build files to the release dir
-cp ./build/bundle.js ./release/signal/bundle.js
-cp ./hc-dna/workdir/social-context.dna ./release/signal/social-context.dna
+cp ./build/bundle.js ./release/full_features/bundle.js
+cp ./hc-dna/workdir/social-context.dna ./release/full_features/social-context.dna
 
 
 
-echo "Create release with full index + time index but no signals..."
+echo "Create release with time index but no signals..."
 
 cp ./hc-dna/workdir/dna_time_index.yaml ./hc-dna/workdir/dna.yaml
 npm install && npm run build
 
-[ ! -d "./release/full_time_index" ] && mkdir "./release/full_time_index"
+[ ! -d "./release/time_index" ] && mkdir "./release/time_index"
 
-cp ./build/bundle.js ./release/full_time_index/bundle.js
-cp ./hc-dna/workdir/social-context.dna ./release/full_time_index/social-context.dna
+cp ./build/bundle.js ./release/time_index/bundle.js
+cp ./hc-dna/workdir/social-context.dna ./release/time_index/social-context.dna
 
-cd ./release/signal && zip -j -r ../signal.zip ./* && cd -
-cd ./release/full_index && zip -j -r ../full_index.zip ./* && cd -
-cd ./release/full_time_index && zip -j -r ../full_time_index.zip ./* && cd -
+
+
+echo "Create release with signals but no time index..."
+
+cp ./hc-dna/workdir/dna_signals.yaml ./hc-dna/workdir/dna.yaml
+npm install && npm run build
+
+[ ! -d "./release/signals" ] && mkdir "./release/signals"
+
+cp ./build/bundle.js ./release/signals/bundle.js
+cp ./hc-dna/workdir/social-context.dna ./release/signals/social-context.dna
+
+cd ./release/basic && zip -j -r ../basic.zip ./* && cd -
+cd ./release/full_features && zip -j -r ../full_features.zip ./* && cd -
+cd ./release/time_index && zip -j -r ../time_index.zip ./* && cd -
+cd ./release/signals && zip -j -r ../signals.zip ./* && cd -

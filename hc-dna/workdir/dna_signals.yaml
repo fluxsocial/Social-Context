@@ -7,7 +7,7 @@ properties: {
   "max_chunk_interval": 43200000,
   "active_agent_duration_s": 300,
   "enable_signals": true,
-  "enable_time_index": true,
+  "enable_time_index": false,
 }
 zomes: 
   - name: social_context
