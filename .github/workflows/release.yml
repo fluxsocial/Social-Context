@@ -1,11 +1,12 @@
 name: CI
 
 on:
-  pull_request:
-    branches: [ master ]
+  push:
+    tags:
+    - '*'
 
 jobs:
-  test:
+  release:
 
     runs-on: ubuntu-latest
 
@@ -16,6 +17,8 @@ jobs:
     steps:
     - name: Fetch source code
       uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
     - name: Use Nix
       uses: cachix/install-nix-action@v12
     - name: Use Node.js ${{ matrix.node-version }}
@@ -33,5 +36,11 @@ jobs:
         # authToken: '${{ secrets.CACHIX_HOLOCHAIN_CI }}'
     - name: Prepare Nix environment
       run: nix-shell --command "echo Completed"
-    - name: Run all tests
-      run: nix-shell --run 'make test'
+    - name: Release languages
+      run: ./release.sh
+    - name: Upload released files
+      uses: ncipollo/release-action@v1
+      with:
+        artifacts: "release/full_index/bundle.js, release/full_index/social-context.dna, release/full_index.zip, release/full_time_index.zip, release/signal.zip"
+        token: ${{ secrets.GITHUB_TOKEN }}
+        allowUpdates: true  
