@@ -15,8 +15,6 @@ echo "Create release with full index & no signals or time index..."
 
 #Get new dna.yaml with correct props & build language
 cp ./hc-dna/workdir/dna_basic_full_index.yaml ./hc-dna/workdir/dna.yaml
-cd ./hc-dna && ./build.sh
-cd ../
 npm install && npm run build
 
 #Check if full_index directory exists, if not create
@@ -32,8 +30,6 @@ echo "Create release with full index + signals + time index..."
 
 #Get new dna.yaml with correct props & build language
 cp ./hc-dna/workdir/dna_signals.yaml ./hc-dna/workdir/dna.yaml
-cd ./hc-dna && ./build.sh
-cd ../
 npm install && npm run build
 
 #Create the signal release dir
@@ -48,8 +44,6 @@ cp ./hc-dna/workdir/social-context.dna ./release/signal/social-context.dna
 echo "Create release with full index + time index but no signals..."
 
 cp ./hc-dna/workdir/dna_time_index.yaml ./hc-dna/workdir/dna.yaml
-cd ./hc-dna && ./build.sh
-cd ../
 npm install && npm run build
 
 [ ! -d "./release/full_time_index" ] && mkdir "./release/full_time_index"
