@@ -44,6 +44,7 @@ This builds the Holochain DNA first, using `nix-shell` (which needs to be instal
 
 ## Test
 
+Run command in nix-shell,
 ```
 make test
 ```
