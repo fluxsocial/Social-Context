@@ -13,7 +13,7 @@ function constructTimestamps(num: number, diffMs: number): Date[] {
     let out: Date[] = [];
     let last = now;
     out.push(last);
-    for (let step =0; step<num; step++) {
+    for (let step=0; step<num; step++) {
         let newTimestamp = new Date(last.getTime() - diffMs)
         console.log("Creating link with timestamp", newTimestamp);
         out.push(newTimestamp);
@@ -22,9 +22,27 @@ function constructTimestamps(num: number, diffMs: number): Date[] {
     return out
 }
 
-function constructLinkData(num: number, diff: number) {
+function constructGroupedTimestamps(num: number, groupings: number, diffMs: number, groupMSDiff: number) {
+    let out: Date[] = [];
+    let start = new Date(now.getTime() - (groupings * groupMSDiff));
+    let linksPerGroup = num / groupings;
+    let currentGrouping = 0;
+    out.push(start);
+    console.log("Starting from timestamp", start, linksPerGroup);
+    for (let step=0; step<num; step++) {
+        if (step % linksPerGroup === 0) {
+            currentGrouping += 1;
+        }
+        let newTimestamp = new Date(start.getTime() + (diffMs * (step - (currentGrouping * linksPerGroup))) + (currentGrouping * groupMSDiff))
+        console.log("Creating link with timestamp", newTimestamp, currentGrouping);
+        out.push(newTimestamp);
+    };
+    return out
+}
+
+function constructLinkData(num: number, diffMs: number) {
     let out = [];
-    let timestamps = constructTimestamps(num, diff);
+    let timestamps = constructTimestamps(num, diffMs);
     for (let step=0; step < num; step++) {
         let data = {
             data: {
@@ -45,7 +63,133 @@ function constructLinkData(num: number, diff: number) {
     return {out, timestamps}
 }
 
-orchestrator.registerScenario("pagination testing descending links", async (s, t) => {
+function constructLongTimeLinkData(num: number, groupings: number, diffMs: number, groupMSDiff: number) {
+    let out = [];
+    let timestamps = constructGroupedTimestamps(num, groupings, diffMs, groupMSDiff);
+    for (let step=0; step < num; step++) {
+        let data = {
+            data: {
+                source: "subject", 
+                target: `target-${step}`, 
+                predicate: "predicate",
+            },
+            author: "test1", 
+            timestamp: timestamps[step].toISOString(), 
+            proof: {
+                signature: "sig", 
+                key: "key"
+            } 
+        }
+        //@ts-ignore
+        out.push(data)
+    }
+    return {out, timestamps}
+}
+
+orchestrator.registerScenario("pagination testing descending links over longer timeframe", async (s, t) => {
+    const [alice] = await s.players([localConductorConfig])
+    const [[alice_sc_happ]] = await alice.installAgentsHapps(installation)
+
+    /// SIMPLE LINK TEST
+
+    const numLinks = 40;
+    let {out: linkData, timestamps} = constructLongTimeLinkData(numLinks, 4, 11111, 43200000);
+    for (let step = 0; step < numLinks; step++) {
+        await alice_sc_happ.cells[0].call(
+            "social_context",
+            "add_link",
+            {
+                linkExpression: linkData[step],
+                indexStrategy: {
+                    type: "Full"
+                },
+            }
+        )
+    }
+    //Get all 40 messages and check that it works correctly
+    const allLinks = await alice_sc_happ.cells[0].call("social_context", "get_links", {source: "subject", target: null, predicate: "predicate", fromDate: now.toISOString(), untilDate: unixDate, limit: 50})
+    console.log(allLinks);
+    t.deepEqual(allLinks.length, 40);
+    let last = undefined;
+    for (let step = 0; step < allLinks.length; step ++) {
+        if (last != undefined) {
+            //@ts-ignore
+            t.deepEqual(last.timestamp > allLinks[step].timestamp, true);
+        }
+        t.deepEqual(allLinks[step].data.target, `target-${allLinks.length-(step+1)}`)
+        last = allLinks[step];
+    }
+
+    //Get first page, should be from now -> unix timestamp with limit of 10 and then use last result to get the next page
+    const firstPage = await alice_sc_happ.cells[0].call("social_context", "get_links", {source: "subject", target: null, predicate: "predicate", fromDate: now.toISOString(), untilDate: unixDate, limit: 10})
+    console.log(firstPage)
+    t.deepEqual(firstPage.length, 10);
+    last = undefined;
+    for (let step = 0; step < firstPage.length; step ++) {
+        if (last != undefined) {
+            //@ts-ignore
+            t.deepEqual(last.timestamp > firstPage[step].timestamp, true);
+        }
+        t.deepEqual(firstPage[step].data.target, `target-${allLinks.length-(step+1)}`)
+        last = firstPage[step];
+    }
+
+    const secondPage = await alice_sc_happ.cells[0].call("social_context", "get_links", {source: "subject", target: null, predicate: "predicate", fromDate: firstPage[firstPage.length -1].timestamp, untilDate: unixDate, limit: 10})
+    console.log(secondPage);
+    t.deepEqual(secondPage.length, 10);
+    last = undefined;
+    for (let step = 0; step < secondPage.length; step ++) {
+        if (last != undefined) {
+            //@ts-ignore
+            t.deepEqual(last.timestamp > secondPage[step].timestamp, true);
+        }
+        t.deepEqual(secondPage[step].data.target, `target-${allLinks.length-(step+10)}`)
+        last = secondPage[step];
+    }
+
+    const thirdPage = await alice_sc_happ.cells[0].call("social_context", "get_links", {source: "subject", target: null, predicate: "predicate", fromDate: secondPage[secondPage.length -1].timestamp, untilDate: unixDate, limit: 10})
+    console.log(thirdPage);
+    t.deepEqual(thirdPage.length, 10);
+    last = undefined;
+    for (let step = 0; step < thirdPage.length; step ++) {
+        if (last != undefined) {
+            //@ts-ignore
+            t.deepEqual(last.timestamp > thirdPage[step].timestamp, true);
+        }
+        t.deepEqual(thirdPage[step].data.target, `target-${allLinks.length-(step+19)}`)
+        last = thirdPage[step];
+    }
+
+    const fourthPage = await alice_sc_happ.cells[0].call("social_context", "get_links", {source: "subject", target: null, predicate: "predicate", fromDate: thirdPage[thirdPage.length -1].timestamp, untilDate: unixDate, limit: 10})
+    console.log(fourthPage);
+    t.deepEqual(fourthPage.length, 10);
+    last = undefined;
+    for (let step = 0; step < fourthPage.length; step ++) {
+        if (last != undefined) {
+            //@ts-ignore
+            t.deepEqual(last.timestamp > fourthPage[step].timestamp, true);
+        }
+        t.deepEqual(fourthPage[step].data.target, `target-${allLinks.length-(step+28)}`)
+        last = fourthPage[step];
+    }
+
+    const fifthPage = await alice_sc_happ.cells[0].call("social_context", "get_links", {source: "subject", target: null, predicate: "predicate", fromDate: fourthPage[fourthPage.length -1].timestamp, untilDate: unixDate, limit: 10})
+    console.log(fifthPage);
+    t.deepEqual(fifthPage.length, 4);
+    last = undefined;
+    for (let step = 0; step < fifthPage.length; step ++) {
+        if (last != undefined) {
+            //@ts-ignore
+            t.deepEqual(last.timestamp > fifthPage[step].timestamp, true);
+        }
+        t.deepEqual(fifthPage[step].data.target, `target-${allLinks.length-(step+37)}`)
+        last = fifthPage[step];
+    }
+
+    t.pass()
+})
+
+orchestrator.registerScenario("basic pagination testing descending links", async (s, t) => {
     const [alice] = await s.players([localConductorConfig])
     const [[alice_sc_happ]] = await alice.installAgentsHapps(installation)
 
