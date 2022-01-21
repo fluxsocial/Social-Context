@@ -34,54 +34,54 @@ pub(crate) fn generate_link_path_permutations(
             // Triple contains source, target and predicate so lets create an index that makes this LinkExpression queryable by:
             // source, target, predicate, source + target, source + predicate, target + predicate
             Ok(vec![
-                LinkPermutation::new(source.clone(), wildcard),
-                LinkPermutation::new(target.clone(), wildcard),
-                LinkPermutation::new(predicate.clone(), wildcard),
-                LinkPermutation::new(source.clone(), target.clone()),
-                LinkPermutation::new(source.clone(), predicate.clone()),
-                LinkPermutation::new(target.clone(), predicate.clone()),
+                LinkPermutation::new(format!("s{}", source.clone()), wildcard),
+                LinkPermutation::new(format!("t{}", target.clone()), wildcard),
+                LinkPermutation::new(format!("p{}", predicate.clone()), wildcard),
+                LinkPermutation::new(format!("s{}", source.clone()), format!("t{}", target.clone())),
+                LinkPermutation::new(format!("s{}", source.clone()), format!("p{}", predicate.clone())),
+                LinkPermutation::new(format!("t{}", target.clone()), format!("p{}", predicate.clone())),
             ])
         },
         (Some(source), Some(target), None) => {
             // Generate permutations to create indexes that makes this discoverable by: source + target, source, target
             Ok(vec![
-                LinkPermutation::new(source.clone(), target.clone()),
-                LinkPermutation::new(source.clone(), wildcard),
-                LinkPermutation::new(target.clone(), wildcard),
+                LinkPermutation::new(format!("s{}", source.clone()), format!("t{}", target.clone())),
+                LinkPermutation::new(format!("s{}", source.clone()), wildcard),
+                LinkPermutation::new(format!("t{}", target.clone()), wildcard),
             ])
         },
         (Some(source), None, Some(predicate)) => {
             // Generate permutations to create indexes that makes this discoverable by: source + predicate, source, predicate
             Ok(vec![
-                LinkPermutation::new(source.clone(), predicate.clone()),
-                LinkPermutation::new(source.clone(), wildcard),
-                LinkPermutation::new(predicate.clone(), wildcard),
+                LinkPermutation::new(format!("s{}", source.clone()), format!("p{}", predicate.clone())),
+                LinkPermutation::new(format!("s{}", source), wildcard),
+                LinkPermutation::new(format!("p{}", predicate), wildcard),
             ])
         },
         (None, Some(target), Some(predicate)) => {
             // Generate permutations to create indexes that makes this discoverable by: target + predicate, target, predicate
             Ok(vec![
-                LinkPermutation::new(target.clone(), predicate.clone()),
-                LinkPermutation::new(target.clone(), wildcard),
-                LinkPermutation::new(predicate.clone(), wildcard),
+                LinkPermutation::new(format!("t{}", target.clone()), format!("p{}", predicate.clone())),
+                LinkPermutation::new(format!("t{}", target), wildcard),
+                LinkPermutation::new(format!("p{}", predicate), wildcard),
             ])
         },
         (Some(source), None, None) => {
             // Source -> * -> LinkExpression
             Ok(vec![
-                LinkPermutation::new(source.clone(), wildcard),
+                LinkPermutation::new(format!("s{}", source), wildcard),
             ])
         },
         (None, Some(target), None) => {
             // Target -> * -> LinkExpression
             Ok(vec![
-                LinkPermutation::new(target.clone(), wildcard),
+                LinkPermutation::new(format!("t{}", target), wildcard),
             ])
         },
         (None, None, Some(predicate)) => {
             // Predicate -> * -> LinkExpression
             Ok(vec![
-                LinkPermutation::new(predicate.clone(), wildcard),
+                LinkPermutation::new(format!("p{}", predicate), wildcard),
             ])
         },
         (None, None, None) => {
@@ -100,30 +100,30 @@ pub(crate) fn get_link_permutation_by(triple: Triple) -> LinkPermutation {
         //Query with source + target; will match all LinkExpression with same source + target
         //In this case the predicate unknown here and thus the value zome caller is interested in
         (Some(source), Some(target), _) => LinkPermutation::new(
-            source,
-            target,
+            format!("s{}", source),
+            format!("t{}", target),
         ),
         //Query with source + predicate
         //Here target is unknown and thus the value the zome caller is looking for
         (Some(source), None, Some(predicate)) => LinkPermutation::new(
-            source,
-            predicate,
+            format!("s{}", source),
+            format!("p{}", predicate),
         ),
         (None, Some(target), Some(predicate)) => LinkPermutation::new(
-            target,
-            predicate,
+            format!("t{}", target),
+            format!("p{}", predicate),
         ),
         //Look for all links with the given source
         (Some(source), None, None) => LinkPermutation::new(
-            source,
+            format!("s{}", source),
             wildcard,
         ),
         (None, Some(target), None) => LinkPermutation::new(
-            target,
+            format!("t{}", target),
             wildcard,
         ),
         (None, None, Some(predicate)) => LinkPermutation::new(
-            predicate,
+            format!("p{}", predicate),
             wildcard,
         ),
         //No elements were supplied in the triple so we use wildcards as source + predicate to simulate a getAllLinks query 

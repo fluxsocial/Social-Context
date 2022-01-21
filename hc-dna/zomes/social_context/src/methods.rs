@@ -117,18 +117,18 @@ impl SocialContextDNA {
             //Index strategy is simple so we only index using source + predicate meaning this LinkExpression will only be discoverable if a query with 
             //source + predicate matching that of the LinkExpression
             IndexStrategy::Simple => vec![LinkPermutation::new(
-                input.link_expression.data
+                format!("s{}", input.link_expression.data
                     .source
                     .clone()
                     .ok_or(SocialContextError::RequestError(
                         "Expected source with simple index strategy",
-                    ))?,
-                input.link_expression.data
+                    ))?),
+                format!("p{}", input.link_expression.data
                     .predicate
                     .clone()
                     .ok_or(SocialContextError::RequestError(
                         "Expected predicate with simple index strategy",
-                    ))?,
+                    ))?),
             )]
         };
 
