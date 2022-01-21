@@ -22,20 +22,15 @@ module.exports = (orchestrator) => {
     
         //Create link
         await alice_sc_happ.cells[0].call("social_context", "add_link", add_link_input);
-    
-        console.log("Getting links");
         
         //Get links on subject
         const subj_links = await alice_sc_happ.cells[0].call("social_context", "get_links", 
           {source: "subject-full", target: null, predicate: null, from: date.toISOString(), until: new Date().toISOString(), limit: 10})
         t.deepEqual(subj_links.length, 1);
     
-        console.log("Removing link");
         await alice_sc_happ.cells[0].call("social_context", "remove_link", add_link_input.linkExpression);
         await sleep(1000);
-    
-        console.log("Getting links");
-    
+  
         //Get links on subject
         const subj_links_pd = await alice_sc_happ.cells[0].call("social_context", "get_links", 
           {source: "subject-full", target: null, predicate: null, from: date.toISOString(), until: new Date().toISOString(), limit: 10})

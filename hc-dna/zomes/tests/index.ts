@@ -18,3 +18,7 @@ orchestrator.run()
 orchestrator = new Orchestrator()
 require('./full-time-index/delete-link')(orchestrator)
 orchestrator.run()
+
+orchestrator = new Orchestrator()
+require('./full-time-index/wildcard-test')(orchestrator)
+orchestrator.run()
