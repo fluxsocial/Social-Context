@@ -13,7 +13,7 @@ use inputs::*;
 pub use validation::*;
 
 
-entry_defs![Path::entry_def(), LinkExpression::entry_def(), AgentReference::entry_def()];
+entry_defs![PathEntry::entry_def(), LinkExpression::entry_def(), AgentReference::entry_def()];
 
 #[hdk_entry(id = "link_data", visibility = "public")]
 #[serde(rename_all = "camelCase")]

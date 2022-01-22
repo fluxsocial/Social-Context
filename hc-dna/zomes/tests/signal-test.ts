@@ -28,6 +28,8 @@ orchestrator.registerScenario("basic link signal testing", async (s, t) => {
 
     //Register as active agent
     await alice_sc_happ.cells[0].call("social_context", "add_active_agent_link", null)
+    await alice_sc_happ.cells[0].call("social_context", "add_active_agent_link", null)
+    await alice_sc_happ.cells[0].call("social_context", "add_active_agent_link", null)
 
     //Register as active agent
     await bob_sc_happ.cells[0].call("social_context", "add_active_agent_link", null)

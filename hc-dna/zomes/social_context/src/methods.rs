@@ -59,7 +59,6 @@ impl SocialContextDNA {
             SearchStrategy::Bfs,
             None,
         )?;
-        debug!("Social-Context.add_active_agent_link: Got recent agents: {:#?}", recent_agents);
 
         let current_agent_online = recent_agents
             .iter()
@@ -142,7 +141,7 @@ impl SocialContextDNA {
                 let link_hash = hash_entry(&input.link_expression)?;
                 let path_source = Path::from(link_index.root_index);
                 path_source.ensure()?;
-                create_link(path_source.hash()?, link_hash.clone(), link_index.tag)?;
+                create_link(path_source.path_entry_hash()?, link_hash.clone(), link_index.tag)?;
             };
         }
         Ok(())
@@ -190,7 +189,7 @@ impl SocialContextDNA {
             }
         } else {
             //Time index not enabled so just make a simple query
-            SocialContextDNA::make_simple_link_query(Path::from(link_query_elements.root_index).hash()?, Some(link_query_elements.tag))
+            SocialContextDNA::make_simple_link_query(Path::from(link_query_elements.root_index).path_entry_hash()?, Some(link_query_elements.tag))
         }
     }
 
@@ -244,7 +243,7 @@ impl SocialContextDNA {
             //For each permutation get links on source and if exists then delete where target of link == target LinkExpression to be deleted
             for link_index in link_indexes {
                 let path_source = Path::from(link_index.root_index);
-                hdk::link::get_links(path_source.hash()?, Some(link_index.tag))?
+                hdk::link::get_links(path_source.path_entry_hash()?, Some(link_index.tag))?
                     .into_iter()
                     .filter(|link| link.target == link_hash)
                     .map(|val| {
