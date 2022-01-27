@@ -1,6 +1,9 @@
 use crate::inputs::Triple;
 use hdk::prelude::*;
 
+use std::hash::Hash;
+use std::collections::HashSet;
+
 #[derive(PartialEq, Debug)]
 pub(crate) struct LinkPermutation {
     pub root_index: String,
@@ -133,6 +136,11 @@ pub(crate) fn get_link_permutation_by(triple: Triple) -> LinkPermutation {
             wildcard,
         ),
     }
+}
+
+pub (crate) fn dedup<T: Eq + Hash + Copy>(v: &mut Vec<T>) { // note the Copy constraint
+    let mut uniques = HashSet::new();
+    v.retain(|e| uniques.insert(*e));
 }
 
 #[cfg(test)]

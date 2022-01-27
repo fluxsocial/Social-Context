@@ -2,7 +2,7 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use hc_time_index::{IndexableEntry, SearchStrategy};
 use hdk::prelude::*;
 
-use crate::utils::{generate_link_path_permutations, get_link_permutation_by, LinkPermutation, get_wildcard};
+use crate::utils::{generate_link_path_permutations, get_link_permutation_by, LinkPermutation, get_wildcard, dedup};
 use crate::errors::{SocialContextError, SocialContextResult};
 use crate::{
     GetLinks, LinkExpression, SocialContextDNA, ACTIVE_AGENT_DURATION,
@@ -35,7 +35,7 @@ impl SocialContextDNA {
                 .into_iter()
                 .map(|val| val.agent)
                 .collect::<Vec<AgentPubKey>>();
-            recent_agents.dedup();
+            dedup(recent_agents);
             debug!("Social-Context.add_link: Sending signal to agents: {:#?}", recent_agents);
             remote_signal(input.link_expression.clone().get_sb()?, recent_agents)?;
         };
