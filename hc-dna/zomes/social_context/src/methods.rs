@@ -31,11 +31,11 @@ impl SocialContextDNA {
                 SearchStrategy::Bfs,
                 None,
             )?;
-            let mut recent_agents = recent_agents
+            let recent_agents = recent_agents
                 .into_iter()
                 .map(|val| val.agent)
                 .collect::<Vec<AgentPubKey>>();
-            dedup(recent_agents);
+            let recent_agents = dedup(&recent_agents);
             debug!("Social-Context.add_link: Sending signal to agents: {:#?}", recent_agents);
             remote_signal(input.link_expression.clone().get_sb()?, recent_agents)?;
         };

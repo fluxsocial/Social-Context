@@ -138,9 +138,10 @@ pub(crate) fn get_link_permutation_by(triple: Triple) -> LinkPermutation {
     }
 }
 
-pub (crate) fn dedup<T: Eq + Hash + Copy>(v: &mut Vec<T>) { // note the Copy constraint
-    let mut uniques = HashSet::new();
-    v.retain(|e| uniques.insert(*e));
+pub (crate) fn dedup<T: Eq + Hash + Clone>(vs: &Vec<T>) -> Vec<T> {
+    let hs = vs.iter().cloned().collect::<HashSet<T>>();
+
+    hs.into_iter().collect()
 }
 
 #[cfg(test)]
