@@ -13,9 +13,9 @@ derive_more = "0"
 serde = "1"
 lazy_static = "*"
 chrono = { version = "0.4", features=["serde"] }
-hc_time_index = { git = "https://github.com/holochain-open-dev/holochain-time-index", branch = "main" }
+hc_time_index = { path = "/home/josh/Documents/junto/holochain-time-index" }
 thiserror = "1.0.20"
 hex = "*"
 
-hdk = "0.0.119"
-holo_hash = "0.0.12"
+hdk = "0.0.123"
+holo_hash = "0.0.20"
